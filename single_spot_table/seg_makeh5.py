@@ -39,7 +39,7 @@ def processData(path, path_aug, crop_size=400, NUM_POINT=2048):
             xyzl[:,0:3] -= center
             np.random.shuffle(xyzl)
             xyzl_d = xyzl[0:NUM_POINT,:]
-            ratio = 1/crop_size
+            ratio = 1/float(crop_size)
             xyzl_d[:,0:3] *= ratio                
             points2pcd(os.path.join(path_aug,os.path.splitext(file)[0]+'.pcd'),xyzl_d)
 
