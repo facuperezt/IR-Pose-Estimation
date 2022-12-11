@@ -11,6 +11,7 @@ sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
 from obj_sample_and_autolabel import sample_and_label
 import slice
+import glob
 
 class LookupTable():
     '''Lookup Table
@@ -50,6 +51,7 @@ class LookupTable():
         # Make sure the directory structure is correct
         components = os.listdir(self.path_models)
         for component in components:
+            if component.startswith('.'): continue
             files = os.listdir(os.path.join(self.path_models, component))
             for file in files:
                 if os.path.splitext(file)[-1] == '.obj':
@@ -81,6 +83,7 @@ class LookupTable():
                 path_classes=self.path_classes)
             components = os.listdir(pdl.path_models)
             for comp in components:
+                if comp.startswith('.'): continue
                 path_to_comp = os.path.join(pdl.path_models, comp)
                 files = os.listdir(path_to_comp)
                 for file in files:
@@ -141,8 +144,8 @@ class LookupTable():
                 print (str(i)+'/'+str(len(files)), file)
                 i += 1
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))      
-                pc_path = os.path.join(path_pcd, file+'.pcd')
-                xml_path = os.path.join(self.path_models, file, file+'.xml')
+                pc_path = glob.glob(os.path.join(path_pcd, file+'.pcd'))
+                xml_path = glob.glob(os.path.join(self.path_models, file, file+'.xml'))
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         
