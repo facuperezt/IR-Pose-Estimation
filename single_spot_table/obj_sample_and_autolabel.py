@@ -15,6 +15,7 @@ ROOT = os.path.dirname(BASE) # dir /lookup_table
 sys.path.insert(0,os.path.join(ROOT,'utils'))
 from math_util import get_projections_of_triangle, get_angle
 from foundation import points2pcd
+from utils.compatibility import listdir
 
 PATH_COMP = '../data/train/models'
 PATH_XYZ = '../data/train/unlabeled_pc'
@@ -30,7 +31,7 @@ def sample_and_label(path, path_pcd, path_xyz, label_dict, class_dict, density=4
     '''
     # get the current component name
     namestr = os.path.split(path)[-1]
-    files = os.listdir(path)
+    files = listdir(path)
     # label_list = {}
     label_count = 0
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
         os.makedirs(path_xyz)
     if not os.path.exists(path_pcd):
         os.makedirs(path_pcd)
-    folders = os.listdir(path)
+    folders = listdir(path)
     count = 0
     total = len(folders)
     for folder in folders:
@@ -100,7 +101,7 @@ if __name__ == '__main__':
     # path_xyz = '../data/test/pc'
     # if not os.path.exists(path_xyz):
     #     os.makedirs(path_xyz)
-    # folders = os.listdir(path)
+    # folders = listdir(path)
     # count = 0
     # total = len(folders)
     # for folder in folders:
