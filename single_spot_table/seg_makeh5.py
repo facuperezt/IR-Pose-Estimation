@@ -10,6 +10,8 @@ import open3d as o3d
 import random
 import copy
 import datetime
+from utils.compatibility import listdir
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 sys.path.append(os.path.join(ROOT,'utils'))
@@ -28,7 +30,7 @@ def processData(path, path_aug, crop_size=400, NUM_POINT=2048):
         repeat_num (int): number of copies
         crop_size (int): side length of cutting bbox in mm 
     """
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         if os.path.splitext(file)[1] == '.pcd':
             pts = load_pcd_data(os.path.join(path,file))

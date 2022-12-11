@@ -12,6 +12,8 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import OPTICS
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from utils.compatibility import listdir
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR)
@@ -150,7 +152,7 @@ def merge_lookup_table(path_lookup_table):
 
     '''
     dict_all = {}
-    files = os.listdir(path_lookup_table)
+    files = listdir(path_lookup_table)
     for file in files:
         with open(os.path.join(path_lookup_table, file), 'rb') as f:
             fd = pickle.load(f)
@@ -167,7 +169,7 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
         os.makedirs(os.path.join(path_data, 'ss_lookup_table/dict'))
     with open(os.path.join(path_lookup_table, 'lookup_table.pkl'), 'rb') as f:
         dict_all = pickle.load(f)
-    files = os.listdir(path_wz)
+    files = listdir(path_wz)
 
     for i, file in enumerate(files):
         print (str(i)+'/'+str(len(files)), file)
@@ -274,7 +276,7 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
     path = os.path.join(path_data, 'ss_lookup_table/dict')
     if not os.path.exists(os.path.join(path_train, 'welding_zone_comp')):
         os.makedirs(os.path.join(path_train, 'welding_zone_comp'))
-    files = os.listdir(path)
+    files = listdir(path)
     used = np.zeros(len(files))
     new_lib = []
     for i in range(len(files)):
@@ -319,7 +321,7 @@ def move_files(path_data):
     if not os.path.exists(path_dict):
         os.makedirs(path_dict)
     path = os.path.join(path_data, 'train/welding_zone_comp')
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
@@ -333,7 +335,7 @@ def norm_index(path_data):
     '''
     path = os.path.join(path_data, 'ss_lookup_table/dict_comp')
     d = {}
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         with open(os.path.join(path, file), 'rb') as f:
             fd = pickle.load(f)
@@ -368,7 +370,7 @@ if __name__ == '__main__':
         os.makedirs(path_welding_zone)
     if not os.path.exists(path_lookup_table):
         os.makedirs(path_lookup_table)
-    files = os.listdir('../data/train/models')
+    files = listdir('../data/train/models')
     print ('Generate one point cloud slice per welding spot')
     i = 1
     for file in files:

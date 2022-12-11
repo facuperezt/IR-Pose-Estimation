@@ -8,6 +8,8 @@ import math
 import sys
 import copy
 import time
+from utils.compatibility import listdir
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 sys.path.append(os.path.join(ROOT,'utils'))
@@ -20,7 +22,7 @@ def sample_test_pc(path, density=40):
     
     '''
     namestr = os.path.split(path)[-1]
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         if file == namestr+'.obj':
             mesh = o3d.io.read_triangle_mesh(os.path.join(path, file))                 
@@ -158,7 +160,7 @@ if __name__ == '__main__':
     ################sort out#######################
     # test_path = '../data/test_ds2/models'
     # src = '../data/welding_objects_ds2'
-    # files = os.listdir(src)
+    # files = listdir(src)
     
     # objs = []
     # for file in files:
@@ -175,7 +177,7 @@ if __name__ == '__main__':
     
     ################rotataion&slice################
     path_test = '../data/test/models'
-    test_files = os.listdir(path_test)
+    test_files = listdir(path_test)
     for test_file in test_files:
         print ('sampling... ...', test_file)
         print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))

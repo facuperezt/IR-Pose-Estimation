@@ -11,7 +11,7 @@ sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
 from obj_sample_and_autolabel import sample_and_label
 import slice
-import glob
+from utils.compatibility import listdir
 
 class LookupTable():
     '''Lookup Table
@@ -49,10 +49,10 @@ class LookupTable():
         self.crop_size = crop_size
         self.num_points = num_points
         # Make sure the directory structure is correct
-        components = os.listdir(self.path_models)
+        components = listdir(self.path_models)
         for component in components:
             if component.startswith('.'): continue
-            files = os.listdir(os.path.join(self.path_models, component))
+            files = listdir(os.path.join(self.path_models, component))
             for file in files:
                 if os.path.splitext(file)[-1] == '.obj':
                     old_name = os.path.splitext(file)[0]
@@ -81,11 +81,11 @@ class LookupTable():
             pdl = PDL(path_models=os.path.join(BASE, 'data', 'train', 'models'),
                 path_split=os.path.join(BASE, 'data', 'train', 'split'),
                 path_classes=self.path_classes)
-            components = os.listdir(pdl.path_models)
+            components = listdir(pdl.path_models)
             for comp in components:
                 if comp.startswith('.'): continue
                 path_to_comp = os.path.join(pdl.path_models, comp)
-                files = os.listdir(path_to_comp)
+                files = listdir(path_to_comp)
                 for file in files:
                     if os.path.splitext(file)[1] == '.obj':
                         pdl.split(os.path.join(path_to_comp, file))
@@ -121,7 +121,7 @@ class LookupTable():
             os.makedirs(path_xyz)
         if not os.path.exists(path_pcd):
             os.makedirs(path_pcd)
-        folders = os.listdir(path_split)
+        folders = listdir(path_split)
         for folder in folders:
             # for each component merge the labeled part mesh and sample mesh into pc
             if os.path.isdir(os.path.join(path_split, folder)):
@@ -137,15 +137,15 @@ class LookupTable():
             os.makedirs(path_welding_zone)
         if not os.path.exists(path_lookup_table):
             os.makedirs(path_lookup_table)
-        files = os.listdir(self.path_models)
+        files = listdir(self.path_models)
         print ('Generate one point cloud slice per welding spot')
         i = 1
         for file in files:
                 print (str(i)+'/'+str(len(files)), file)
                 i += 1
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))      
-                pc_path = glob.glob(os.path.join(path_pcd, file+'.pcd'))
-                xml_path = glob.glob(os.path.join(self.path_models, file, file+'.xml'))
+                pc_path = os.path.join(path_pcd, file+'.pcd')
+                xml_path = os.path.join(self.path_models, file, file+'.xml')
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         
