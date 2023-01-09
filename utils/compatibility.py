@@ -4,7 +4,8 @@ import sys
 
 
 def listdir_nohidden(path):
-    return glob.glob(os.path.join(path, '*'))
+    return [file.split('/')[-1] for file in glob.glob(os.path.join(path, '*'))]
+
 
 def listdir(path):
     return list(listdir_nohidden(path))
