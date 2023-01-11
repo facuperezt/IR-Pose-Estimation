@@ -49,7 +49,7 @@ def sample_and_label(path, path_pcd, path_xyz, label_dict, class_dict, density=4
                 pc = mesh.sample_points_poisson_disk(number_points, init_factor=5)
                 xyz = np.asarray(pc.points)
                 l = label * np.ones(xyz.shape[0])
-                xyzl = np.c_[xyz, l]
+                xyzl = np.c_[xyz, l] # Translates slice objects to concatenation along the second axis. Basically concatenate .-.
                 # print (file, 'sampled point cloud: ', xyzl.shape)
                 allpoints = np.concatenate((allpoints, xyzl), axis=0)
     points2pcd(os.path.join(path_pcd, namestr+'.pcd'), allpoints[1:])

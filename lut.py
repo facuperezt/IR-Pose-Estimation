@@ -93,6 +93,9 @@ class LookupTable():
             pdl.label()
         elif self.label == 'HFD':
             self.path_classes = self.hfd_path_classes
+        elif self.label == 'debug':
+            self.path_classes = os.path.join(BASE, 'data', 'train', 'parts_classification')
+            pass
         else:
             raise NotImplementedError
         f = open(os.path.join(self.path_classes, 'class_dict.pkl'), 'rb')
