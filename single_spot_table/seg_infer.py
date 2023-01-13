@@ -12,7 +12,7 @@ import random
 import sys
 import scipy.linalg as linalg
 import math
-from utils.compatibility import listdir
+from compatibility import listdir
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)

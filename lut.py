@@ -9,7 +9,7 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
-from obj_sample_and_autolabel import sample_and_label
+from obj_sample_and_autolabel import sample_and_label_parallelized
 import slice
 from utils.compatibility import listdir
 
@@ -127,10 +127,10 @@ class LookupTable():
         folders = listdir(path_split)
         for folder in folders:
             # for each component merge the labeled part mesh and sample mesh into pc
-            if os.path.isdir(os.path.join(path_split, folder)):
+            if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
                 print ('sampling... ...', folder)
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-                sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
+                sample_and_label_parallelized(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
 
         # path to dir of welding slices
         path_welding_zone = os.path.join(self.path_train, 'welding_zone')
@@ -164,5 +164,5 @@ class LookupTable():
             
 
 if __name__ == '__main__':
-    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
+    lut = LookupTable(path_data='./data', label='debug', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
     lut.make()
