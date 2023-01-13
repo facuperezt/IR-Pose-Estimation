@@ -318,7 +318,7 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
         name = os.path.splitext(file)[0]
         src = os.path.join(path_wz, name+'.pcd')
         # src2 = './data/welding_zone/'+name+'.xml'
-        copyfile(src, os.path.join(path_train, 'welding_zone_comp'))
+        copyfile(src, os.path.join(path_train, 'welding_zone_comp', f'{name}.pcd'))
         # os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
         # os.system('cp %s ./data/welding_zone_comp' % (src2))
 

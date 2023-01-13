@@ -127,7 +127,7 @@ class LookupTable():
             os.makedirs(path_pcd)
         folders = listdir(path_split)
 
-        nr_processes = min(len(folders), cpu_count() - 1)
+        nr_processes = min(len(folders) - 1, cpu_count() - 1)
         folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
         k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
         split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
