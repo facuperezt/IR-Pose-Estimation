@@ -33,8 +33,12 @@ def split_models(in_path: str, out_path: str) -> bool:
 
 
 if __name__ == '__main__':
+    if sys.argv[1] in ['1', '2']:
+        dataset_nr = int(sys.argv[1])
+    else:
+        raise ValueError('First argument has to be "1" or "2"')
     os.system('mv data data_last')
-    split_models('Dataset/welding_objects_ds1', 'data/train/models')
+    split_models(f'Dataset/welding_objects_ds{dataset_nr}', 'data/train/models')
 
 
 
