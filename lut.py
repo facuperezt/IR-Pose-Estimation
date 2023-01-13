@@ -219,7 +219,7 @@ if __name__ == '__main__':
         from foundation import points2pcd, load_pcd_data
         lp = LineProfiler()
         lp.add_function(slice.WeldScene.__init__)
-        lp.add_functino(slice.WeldScene.crop)
+        lp.add_function(slice.WeldScene.crop)
         lp.add_function(slice.slice_one)
         lp.add_function(sample_and_label)
         lp.add_function(points2pcd)
