@@ -203,5 +203,5 @@ if __name__ == '__main__':
     lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
     lut.make()
     print('\n'.join(['='*25]*2))
-    print(f'Total duration: {time.time():.4f}s')
+    print(f'Total duration: {time.time() - start:.4f}s')
     print('\n'.join(['='*25]*2))
