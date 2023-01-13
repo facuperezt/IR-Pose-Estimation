@@ -22,8 +22,6 @@ def parse_args():
 
     return parser.parse_args()
 
-args = None
-
 class LookupTable():
     '''Lookup Table
     Mesh transformation, slicing, making lookup tables
@@ -49,7 +47,8 @@ class LookupTable():
                  hfd_path_classes:str='./data/train/parts_classification',
                  pcl_density:int=40,
                  crop_size:int=400,
-                 num_points:int=2048):
+                 num_points:int=2048,
+                 profile=False):
         self.path_data = path_data
         self.path_train = os.path.join(self.path_data, 'train')
         self.path_models = os.path.join(self.path_train, 'models')
@@ -59,6 +58,7 @@ class LookupTable():
         self.pcl_density = pcl_density
         self.crop_size = crop_size
         self.num_points = num_points
+        self.profile = profile
         # Make sure the directory structure is correct
         components = listdir(self.path_models)
         for component in components:
@@ -137,7 +137,7 @@ class LookupTable():
             os.makedirs(path_pcd)
         folders = listdir(path_split)
 
-        if args.profile:
+        if self.profile:
             for folder in folders:
                 # for each component merge the labeled part mesh and sample mesh into pc
                 if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
@@ -172,7 +172,7 @@ class LookupTable():
         files = listdir(self.path_models)
         print ('Generate one point cloud slice per welding spot')
             
-        if args.profile:    
+        if self.profile:    
             i = 1
             for file in files:
                 print (str(i)+'/'+str(len(files)), file)
@@ -214,9 +214,10 @@ class LookupTable():
 
 if __name__ == '__main__':
     args = parse_args()
-    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
+    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048, profile=args.profile)
     if args.profile:
-        from foundation import points2pcd, load_pcd_data
+        from foundation import points2pcd, load_pcd_data, fps
+        os.system('mv data data_tmp')
         lp = LineProfiler()
         lp.add_function(slice.WeldScene.__init__)
         lp.add_function(slice.WeldScene.crop)
@@ -224,6 +225,7 @@ if __name__ == '__main__':
         lp.add_function(sample_and_label)
         lp.add_function(points2pcd)
         lp.add_function(load_pcd_data)
+        lp.add_function(fps)
         start = time.time()
         lp_wrapper = lp(lut.make)
         lp_wrapper()
@@ -231,5 +233,7 @@ if __name__ == '__main__':
         print(f'Total duration: {time.time() - start:.4f}s')
         print('\n'.join(['='*25]*2))
         lp.print_stats()
+        os.system('rm -r data')
+        os.system('mv data_tmp data')
     else:
         lut.make()
