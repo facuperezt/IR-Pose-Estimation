@@ -28,14 +28,13 @@ def _write_individual_models(in_path: str, out_path: str, models_dict: Dict):
 
 def split_models(in_path: str, out_path: str) -> bool:
     models_dict = _get_individual_models(in_path)
-    print(models_dict)
     _write_individual_models(in_path, out_path, models_dict)
     return True
 
 
 if __name__ == '__main__':
-    print(sys.argv)
-    split_models(sys.argv[1], sys.argv[2])
+    os.system('mv data data_last')
+    split_models('Dataset/welding_objects_ds1', 'data/train/models')
 
 
 
