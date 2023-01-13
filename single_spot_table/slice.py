@@ -27,6 +27,7 @@ import pickle
 from xml.dom.minidom import Document
 import copy
 import time
+from shutil import copyfile
 
 # # load label dictionary
 # f = open('../data/train/parts_classification/label_dict.pkl', 'rb')
@@ -46,7 +47,7 @@ class WeldScene:
     def __init__(self, pc_path):
         self.pc = o3d.geometry.PointCloud()
         xyzl = load_pcd_data(pc_path)
-        print (xyzl.shape)
+        # print (xyzl.shape)
         self.xyz = xyzl[:,0:3]
         self.l = xyzl[:,3]
         self.pc.points = o3d.utility.Vector3dVector(self.xyz)
@@ -119,6 +120,14 @@ class WeldScene:
             o3d.visualization.draw_geometries([cropped_pc, coor1, bbox])
         return xyzl_crop, cropped_pc, weld_info
 
+def slice_one_parallel(args):
+    files, path_welding_zone, path_lookup_table, crop_size, num_points, path_pcd, path_models = args
+    for file in files:
+        pc_path = os.path.join(path_pcd, file+'.pcd')
+        xml_path = os.path.join(path_models, file, file+'.xml')
+        name = file
+        slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
+    print('sampling done ... ...', files)
 
 def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400, num_points=2048):
     '''Slicing one component
@@ -143,9 +152,9 @@ def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400
         
         points2pcd(os.path.join(path_wz, name+'_'+str(i)+'.pcd'), cxyzl)
         d[name+'_'+str(i)] = new_weld_info
-    print ('num of welding spots: ',len(d))      
     with open(os.path.join(path_lookup_table, name+'.pkl'), 'wb') as tf:
         pickle.dump(d,tf,protocol=2)
+    # print ('num of welding spots: ',len(d))
 
 def merge_lookup_table(path_lookup_table):
     '''Merge all the lookup table of single component into one 
@@ -309,7 +318,8 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
         name = os.path.splitext(file)[0]
         src = os.path.join(path_wz, name+'.pcd')
         # src2 = './data/welding_zone/'+name+'.xml'
-        os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
+        copyfile(src, os.path.join(path_train, 'welding_zone_comp'))
+        # os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
         # os.system('cp %s ./data/welding_zone_comp' % (src2))
 
 def move_files(path_data):
@@ -326,8 +336,9 @@ def move_files(path_data):
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
             # print (name)
-            os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
-                                    os.path.join(path_data, 'ss_lookup_table/dict_comp')))
+            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp'))
+            # os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
+            #                         os.path.join(path_data, 'ss_lookup_table/dict_comp')))
 
 def norm_index(path_data):
     '''Use normal strings to create sub-tables to speed up lookup

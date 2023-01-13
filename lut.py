@@ -9,9 +9,10 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
-from obj_sample_and_autolabel import sample_and_label_parallelized
+from obj_sample_and_autolabel import sample_and_label, sample_and_label_parallel
 import slice
 from utils.compatibility import listdir
+from multiprocessing import Pool, cpu_count
 
 class LookupTable():
     '''Lookup Table
@@ -125,12 +126,28 @@ class LookupTable():
         if not os.path.exists(path_pcd):
             os.makedirs(path_pcd)
         folders = listdir(path_split)
-        for folder in folders:
-            # for each component merge the labeled part mesh and sample mesh into pc
-            if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
-                print ('sampling... ...', folder)
-                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-                sample_and_label_parallelized(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
+
+        nr_processes = min(len(folders), cpu_count() - 1)
+        folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
+        k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
+        split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split]]*nr_processes
+        args = [[_folders, *_args] for _args, _folders in zip(repeated_args, split_folders)]
+
+
+        print ('sampling... ...', folders)
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        with Pool(nr_processes) as p:
+            p.map(sample_and_label_parallel, [_args for _args in args])
+
+        print('sampling finished')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        # for folder in folders:
+        #     # for each component merge the labeled part mesh and sample mesh into pc
+        #     if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
+        #         print ('sampling... ...', folder)
+        #         print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        #         sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
 
         # path to dir of welding slices
         path_welding_zone = os.path.join(self.path_train, 'welding_zone')
@@ -142,15 +159,32 @@ class LookupTable():
             os.makedirs(path_lookup_table)
         files = listdir(self.path_models)
         print ('Generate one point cloud slice per welding spot')
-        i = 1
-        for file in files:
-                print (str(i)+'/'+str(len(files)), file)
-                i += 1
-                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))      
-                pc_path = os.path.join(path_pcd, file+'.pcd')
-                xml_path = os.path.join(self.path_models, file, file+'.xml')
-                name = file
-                slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
+
+        files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
+        k, m = divmod(len(files), nr_processes)                                                    # divide among processors
+        split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        repeated_args = [[path_welding_zone, path_lookup_table, self.crop_size, self.num_points, path_pcd, self.path_models]]*nr_processes
+        args = [[_files, *_args] for _args, _files in zip(repeated_args, split_files)]
+
+
+        print ('slicing... ...', files)
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        with Pool(nr_processes) as p:
+            p.map(slice.slice_one_parallel, [_args for _args in args])
+
+        print('slicing finished')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        # i = 1
+        # for file in files:
+        #     print (str(i)+'/'+str(len(files)), file)
+        #     i += 1
+        #     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))      
+        #     pc_path = os.path.join(path_pcd, file+'.pcd')
+        #     xml_path = os.path.join(self.path_models, file, file+'.xml')
+        #     name = file
+        #     slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         
         slice.merge_lookup_table(path_lookup_table)
         print ('Extract feature dictionary from point cloud slices\n')
@@ -161,8 +195,13 @@ class LookupTable():
         print ('Use the normal information to generate an index for easy searching\n')
         slice.norm_index(self.path_data)
         print('FINISHED')
+
             
 
 if __name__ == '__main__':
-    lut = LookupTable(path_data='./data', label='debug', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
+    start = time.time()
+    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
     lut.make()
+    print('\n'.join(['='*25]*2))
+    print(f'Total duration: {time.time():.4f}s')
+    print('\n'.join(['='*25]*2))
