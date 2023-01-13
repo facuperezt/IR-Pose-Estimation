@@ -3,6 +3,7 @@ import sys
 from utils.compatibility import listdir
 from typing import Dict
 import shutil
+import copy
 
 def _get_individual_models(path:str) -> Dict:
     objs = listdir(path)
@@ -18,10 +19,10 @@ def _write_individual_models(in_path: str, out_path: str, models_dict: Dict):
 
     for model, files in models_dict.items():
         for file in files:
-            model_out_path = os.path.join(out_path, model)
+            model_out_path = os.path.join(out_path, model.replace(' ', '-'))
             if not os.path.exists(model_out_path):
                 os.makedirs(model_out_path)
-            shutil.copyfile(os.path.join(in_path, file), os.path.join(model_out_path, file))
+            shutil.copyfile(os.path.join(in_path.replace(' ', '\ '), file.replace(' ', '\ ')), os.path.join(model_out_path.replace(' ', '-'), file.replace(' ', '-')))
 
 
 
