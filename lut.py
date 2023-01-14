@@ -22,6 +22,7 @@ def parse_args():
     parser.add_argument('--skip_sampling', action='store_true', help='If flag is present sampling won\'t be executed')
     parser.add_argument('--skip_slicing', action='store_true', help='If flag is present slicing won\'t be executed')
     parser.add_argument('-s', '--skip_both', action='store_true', help='If flag is present sampling AND slicing will be skipped')
+    parser.add_argument('--label', type=str, default='PDL', help='Type of splitting, default "PDL". To skip splitting use "skip_split"')
 
     return parser.parse_args()
 
@@ -111,7 +112,7 @@ class LookupTable():
             pdl.label()
         elif self.label == 'HFD':
             self.path_classes = self.hfd_path_classes
-        elif self.label == 'debug':
+        elif self.label == 'skip_split':
             self.path_classes = os.path.join(BASE, 'data', 'train', 'parts_classification')
             pass
         else:
@@ -225,7 +226,7 @@ class LookupTable():
 
 if __name__ == '__main__':
     args = parse_args()
-    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
+    lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
          profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
     if args.profile:
         from foundation import points2pcd, load_pcd_data, fps
