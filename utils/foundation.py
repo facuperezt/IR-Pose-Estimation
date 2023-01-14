@@ -19,9 +19,9 @@ def obj2pcd(path_obj, path_pcd):
                 # os.system('cp %s %s'%(os.path.join(home, filename), path_pcd))
                 mesh = o3d.io.read_triangle_mesh(os.path.join(home, filename)) # load .obj mesh
                 number_points = int(mesh.get_surface_area()/100) # get number of points according to surface area
-                print (number_points)
+                # print (number_points)
                 pc = mesh.sample_points_poisson_disk(number_points, init_factor=5) # poisson disk sampling
-                print (np.asarray(pc.points).shape)
+                # print (np.asarray(pc.points).shape)
                 o3d.io.write_point_cloud(os.path.join(path_pcd, os.path.splitext(filename)[0]+'.pcd'), pc, write_ascii=True)
 
 def xyz2pcd(path_xyz, path_pcd):
@@ -63,7 +63,7 @@ def load_pcd_data(file_path):
     for line in data[10:]:
         line = line.strip('\n')
         xyzlable = line.split(' ')
-        x, y, z, lable = [eval(i) for i in xyzlable[:4]]
+        x, y, z, lable = [float(i) if '.' in i else int(i) for i in xyzlable[:4]] # 5x faster
         pts.append([x,y,z,lable])
     res = np.zeros((len(pts),len(pts[0])), dtype = np.float64)
     for i in range(len(pts)):

@@ -12,6 +12,8 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import OPTICS
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from utils.compatibility import listdir
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 sys.path.append(BASE_DIR)
@@ -25,6 +27,7 @@ import pickle
 from xml.dom.minidom import Document
 import copy
 import time
+from shutil import copyfile
 
 # # load label dictionary
 # f = open('../data/train/parts_classification/label_dict.pkl', 'rb')
@@ -44,7 +47,7 @@ class WeldScene:
     def __init__(self, pc_path):
         self.pc = o3d.geometry.PointCloud()
         xyzl = load_pcd_data(pc_path)
-        print (xyzl.shape)
+        # print (xyzl.shape)
         self.xyz = xyzl[:,0:3]
         self.l = xyzl[:,3]
         self.pc.points = o3d.utility.Vector3dVector(self.xyz)
@@ -117,6 +120,19 @@ class WeldScene:
             o3d.visualization.draw_geometries([cropped_pc, coor1, bbox])
         return xyzl_crop, cropped_pc, weld_info
 
+def slice_one_parallel(args):
+    files, path_welding_zone, path_lookup_table, crop_size, num_points, path_pcd, path_models = args
+    for file in files:
+        pc_path = os.path.join(path_pcd, file+'.pcd')
+        xml_path = os.path.join(path_models, file, file+'.xml')
+        name = file
+        try:
+            slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
+        except Exception as e:
+            with open('failed_slices.txt', 'a') as f:
+                f.write(e)
+                f.write('\n')
+    print('slicing done ... ...', files)
 
 def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400, num_points=2048):
     '''Slicing one component
@@ -141,16 +157,16 @@ def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400
         
         points2pcd(os.path.join(path_wz, name+'_'+str(i)+'.pcd'), cxyzl)
         d[name+'_'+str(i)] = new_weld_info
-    print ('num of welding spots: ',len(d))      
     with open(os.path.join(path_lookup_table, name+'.pkl'), 'wb') as tf:
         pickle.dump(d,tf,protocol=2)
+    # print ('num of welding spots: ',len(d))
 
 def merge_lookup_table(path_lookup_table):
     '''Merge all the lookup table of single component into one 
 
     '''
     dict_all = {}
-    files = os.listdir(path_lookup_table)
+    files = listdir(path_lookup_table)
     for file in files:
         with open(os.path.join(path_lookup_table, file), 'rb') as f:
             fd = pickle.load(f)
@@ -167,7 +183,7 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
         os.makedirs(os.path.join(path_data, 'ss_lookup_table/dict'))
     with open(os.path.join(path_lookup_table, 'lookup_table.pkl'), 'rb') as f:
         dict_all = pickle.load(f)
-    files = os.listdir(path_wz)
+    files = listdir(path_wz)
 
     for i, file in enumerate(files):
         print (str(i)+'/'+str(len(files)), file)
@@ -274,7 +290,7 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
     path = os.path.join(path_data, 'ss_lookup_table/dict')
     if not os.path.exists(os.path.join(path_train, 'welding_zone_comp')):
         os.makedirs(os.path.join(path_train, 'welding_zone_comp'))
-    files = os.listdir(path)
+    files = listdir(path)
     used = np.zeros(len(files))
     new_lib = []
     for i in range(len(files)):
@@ -307,7 +323,8 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
         name = os.path.splitext(file)[0]
         src = os.path.join(path_wz, name+'.pcd')
         # src2 = './data/welding_zone/'+name+'.xml'
-        os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
+        copyfile(src, os.path.join(path_train, 'welding_zone_comp', f'{name}.pcd'))
+        # os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
         # os.system('cp %s ./data/welding_zone_comp' % (src2))
 
 def move_files(path_data):
@@ -319,13 +336,14 @@ def move_files(path_data):
     if not os.path.exists(path_dict):
         os.makedirs(path_dict)
     path = os.path.join(path_data, 'train/welding_zone_comp')
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
             # print (name)
-            os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
-                                    os.path.join(path_data, 'ss_lookup_table/dict_comp')))
+            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp'+name+'.pkl'))
+            # os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
+            #                         os.path.join(path_data, 'ss_lookup_table/dict_comp')))
 
 def norm_index(path_data):
     '''Use normal strings to create sub-tables to speed up lookup
@@ -333,7 +351,7 @@ def norm_index(path_data):
     '''
     path = os.path.join(path_data, 'ss_lookup_table/dict_comp')
     d = {}
-    files = os.listdir(path)
+    files = listdir(path)
     for file in files:
         with open(os.path.join(path, file), 'rb') as f:
             fd = pickle.load(f)
@@ -368,7 +386,7 @@ if __name__ == '__main__':
         os.makedirs(path_welding_zone)
     if not os.path.exists(path_lookup_table):
         os.makedirs(path_lookup_table)
-    files = os.listdir('../data/train/models')
+    files = listdir('../data/train/models')
     print ('Generate one point cloud slice per welding spot')
     i = 1
     for file in files:
