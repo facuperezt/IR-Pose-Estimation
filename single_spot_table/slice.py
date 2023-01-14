@@ -127,7 +127,7 @@ def slice_one_parallel(args):
         xml_path = os.path.join(path_models, file, file+'.xml')
         name = file
         slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
-    print('sampling done ... ...', files)
+    print('slicing done ... ...', files)
 
 def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400, num_points=2048):
     '''Slicing one component
