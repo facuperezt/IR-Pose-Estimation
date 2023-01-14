@@ -192,6 +192,7 @@ class LookupTable():
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         elif not self.skip_slicing:
+            nr_processes = min(len(files) - 1, cpu_count() - 1) # leave at least one cpu open
             files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
             k, m = divmod(len(files), nr_processes)                                                    # divide among processors
             split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
