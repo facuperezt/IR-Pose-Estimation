@@ -90,7 +90,12 @@ def sample_and_label_parallelized_old(path, path_pcd, path_xyz, label_dict, clas
 def sample_and_label_parallel(args):
     folders, path_pcd, path_xyz, class_dict, label_dict, density, path_split = args
     for folder in folders:
-        sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, density)
+        try:
+            sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, density)
+        except Exception as e:
+            with open('failed_samples.txt', 'a') as f:
+                f.write(e)
+                f.write('\n')
     print('sampling done ... ...', folders)
 
     

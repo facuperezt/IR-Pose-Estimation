@@ -19,6 +19,9 @@ import argparse
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--profile', action='store_true', help='If flag is present line_profiler is used on key functions')
+    parser.add_argument('--skip_sampling', action='store_true', help='If flag is present sampling won\'t be executed')
+    parser.add_argument('--skip_slicing', action='store_true', help='If flag is present slicing won\'t be executed')
+    parser.add_argument('-s', '--skip_both', action='store_true', help='If flag is present sampling AND slicing will be skipped')
 
     return parser.parse_args()
 
@@ -48,7 +51,9 @@ class LookupTable():
                  pcl_density:int=40,
                  crop_size:int=400,
                  num_points:int=2048,
-                 profile=False):
+                 profile=False,
+                 skip_sampling=False,
+                 skip_slicing=False):
         self.path_data = path_data
         self.path_train = os.path.join(self.path_data, 'train')
         self.path_models = os.path.join(self.path_train, 'models')
@@ -59,6 +64,8 @@ class LookupTable():
         self.crop_size = crop_size
         self.num_points = num_points
         self.profile = profile
+        self.skip_sampling = skip_sampling
+        self.skip_slicing = skip_slicing
         # Make sure the directory structure is correct
         components = listdir(self.path_models)
         for component in components:
@@ -137,22 +144,20 @@ class LookupTable():
             os.makedirs(path_pcd)
         folders = listdir(path_split)
 
-        if self.profile:
+        if self.profile and not self.skip_sampling:
             for folder in folders:
                 # for each component merge the labeled part mesh and sample mesh into pc
                 if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
                     print ('sampling... ...', folder)
                     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                     sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
-        else:
+        elif not self.skip_sampling:
             nr_processes = min(len(folders) - 1, cpu_count() - 1)
             folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
             k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
             split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split]]*nr_processes
             args = [[_folders, *_args] for _args, _folders in zip(repeated_args, split_folders)]
-
-
             print ('sampling... ...', folders)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             with Pool(nr_processes) as p:
@@ -160,6 +165,9 @@ class LookupTable():
 
             print('sampling finished')
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        else:
+            pass
 
         # path to dir of welding slices
         path_welding_zone = os.path.join(self.path_train, 'welding_zone')
@@ -172,7 +180,7 @@ class LookupTable():
         files = listdir(self.path_models)
         print ('Generate one point cloud slice per welding spot')
             
-        if self.profile:    
+        if self.profile and not self.skip_slicing:    
             i = 1
             for file in files:
                 print (str(i)+'/'+str(len(files)), file)
@@ -182,7 +190,7 @@ class LookupTable():
                 xml_path = os.path.join(self.path_models, file, file+'.xml')
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
-        else:
+        elif not self.skip_slicing:
             files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
             k, m = divmod(len(files), nr_processes)                                                    # divide among processors
             split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
@@ -199,6 +207,9 @@ class LookupTable():
             print('slicing finished')
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
+        else:
+            pass
+
         
         slice.merge_lookup_table(path_lookup_table)
         print ('Extract feature dictionary from point cloud slices\n')
@@ -214,7 +225,8 @@ class LookupTable():
 
 if __name__ == '__main__':
     args = parse_args()
-    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048, profile=args.profile)
+    lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
+         profile=args.profile, skip_sampling= args.skip_samping or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
     if args.profile:
         from foundation import points2pcd, load_pcd_data, fps
         os.system('mv data data_tmp')

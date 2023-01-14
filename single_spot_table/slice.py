@@ -126,7 +126,12 @@ def slice_one_parallel(args):
         pc_path = os.path.join(path_pcd, file+'.pcd')
         xml_path = os.path.join(path_models, file, file+'.xml')
         name = file
-        slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
+        try:
+            slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
+        except Exception as e:
+            with open('failed_slices.txt', 'a') as f:
+                f.write(e)
+                f.write('\n')
     print('slicing done ... ...', files)
 
 def slice_one(pc_path, path_wz, path_lookup_table, xml_path, name, crop_size=400, num_points=2048):
