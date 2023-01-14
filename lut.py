@@ -226,7 +226,7 @@ class LookupTable():
 if __name__ == '__main__':
     args = parse_args()
     lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
-         profile=args.profile, skip_sampling= args.skip_samping or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
+         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
     if args.profile:
         from foundation import points2pcd, load_pcd_data, fps
         os.system('mv data data_tmp')
