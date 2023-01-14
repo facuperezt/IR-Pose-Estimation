@@ -33,22 +33,33 @@ def points2pcd(path, points):
     path: ***/***/1.pcd
     points: ndarray, xyz+lable
     """
-    handle = open(path, 'w')
     point_num=points.shape[0]
-    handle.write('VERSION .7\nFIELDS x y z label object\nSIZE 4 4 4 4 4\nTYPE F F F I I\nCOUNT 1 1 1 1 1')
-    string = '\nWIDTH '+str(point_num)
-    handle.write(string)
-    handle.write('\nHEIGHT 1')
-    string = '\nPOINTS '+str(point_num)
-    handle.write(string)
-    handle.write('\nVIEWPOINT 0 0 0 1 0 0 0')
-    handle.write('\nDATA ascii')
+    # handle.write('VERSION .7\nFIELDS x y z label object\nSIZE 4 4 4 4 4\nTYPE F F F I I\nCOUNT 1 1 1 1 1')
+    # string = '\nWIDTH '+str(point_num)
+    # handle.write(string)
+    # handle.write('\nHEIGHT 1')
+    # string = '\nPOINTS '+str(point_num)
+    # handle.write(string)
+    # handle.write('\nVIEWPOINT 0 0 0 1 0 0 0')
+    # handle.write('\nDATA ascii')
+    content = ''
+    content += 'VERSION .7\nFIELDS x y z label object\nSIZE 4 4 4 4 4\nTYPE F F F I I\nCOUNT 1 1 1 1 1'
+    content += '\nWIDTH '+str(points.shape[0])
+    content += '\nHEIGHT 1'
+    content += '\nPOINTS '+str(point_num)
+    content += '\nVIEWPOINT 0 0 0 1 0 0 0'
+    content += '\nDATA ascii'
     obj = -1 * np.ones((point_num,1))
     points_f = np.c_[points, obj]
     for i in range(point_num):
-        handle.write('\n'+str(points_f[i, 0])+' '+str(points_f[i, 1])+' '+
-                str(points_f[i, 2])+' '+str(int(points_f[i, 3]))+' '+str(int(points_f[i,4])))
+        content += '\n'+str(points_f[i, 0])+' '+str(points_f[i, 1])+' '+ \
+                str(points_f[i, 2])+' '+str(int(points_f[i, 3]))+' '+str(int(points_f[i,4]))
+    
+    handle = open(path, 'w')
+    handle.write(content)
     handle.close()
+
+
 
 def load_pcd_data(file_path):
     '''
@@ -56,18 +67,17 @@ def load_pcd_data(file_path):
     return:
         res: np.array with shape (n,4)
     '''
-    pts = []
+
     f = open(file_path, 'r')
     data = f.readlines()
     f.close()
-    for line in data[10:]:
-        line = line.strip('\n')
-        xyzlable = line.split(' ')
-        x, y, z, lable = [float(i) if '.' in i else int(i) for i in xyzlable[:4]] # 5x faster
-        pts.append([x,y,z,lable])
-    res = np.zeros((len(pts),len(pts[0])), dtype = np.float64)
-    for i in range(len(pts)):
-        res[i] = pts[i]
+    res = np.zeros((len(data[10:]),4), dtype = np.float64)
+    for j,line in enumerate(data[10:]):
+        # line = line.strip('\n')
+        # xyzlable = line.split(' ')
+        xyzlable = line.strip('\n').split(' ')
+        res[j] = np.array([float(i) if '.' in i else int(i) for i in xyzlable[:4]]) # 5x faster
+        
     return res
 
 def draw(xyz, label):
@@ -136,5 +146,27 @@ def fps(points, n_samples):
         # Update points_left
         points_left = np.delete(points_left, selected)
 
+    # dist_to_centroid = (((points - points.mean(axis=0, keepdims= True))**2).sum(axis=1))**0.5
+    # sorted_inds = np.argsort(dist_to_centroid)[-n_samples:]
+
+
+
+
+
     return points[sample_inds]
 
+if __name__ == '__main__':
+    points = np.load('points.npy')
+    print(points.shape)
+    pc = o3d.geometry.PointCloud()
+    pc.points = o3d.utility.Vector3dVector(points[:, :3])
+    o3d.visualization.draw_geometries([pc])
+
+    # _points = fps(points, 2048)
+    # pc.points = o3d.utility.Vector3dVector(_points[:, :3])
+    # o3d.visualization.draw_geometries([pc])
+
+    pc.points = pc.points = o3d.utility.Vector3dVector(points[:, :3])
+    pc.voxel_down_sample(voxel_size= 0.5)
+    print(np.array(pc.points).shape)
+    o3d.visualization.draw_geometries([pc])

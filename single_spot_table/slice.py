@@ -130,7 +130,7 @@ def slice_one_parallel(args):
             slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
         except Exception as e:
             with open('failed_slices.txt', 'a') as f:
-                f.write(e)
+                f.write(str(e))
                 f.write('\n')
     print('slicing done ... ...', files)
 
