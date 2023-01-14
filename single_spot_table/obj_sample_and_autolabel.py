@@ -94,7 +94,7 @@ def sample_and_label_parallel(args):
             sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, density)
         except Exception as e:
             with open('failed_samples.txt', 'a') as f:
-                f.write(e)
+                f.write(str(e))
                 f.write('\n')
     print('sampling done ... ...', folders)
 
