@@ -1,0 +1,64 @@
+# Dataset Related
+num_points: 2048  # number of poins actually used in training and evaluation
+dataset:
+  common:
+    NAME: PoseEstimation
+    data_dir: './data/train/dataset'
+  train:
+    split: train
+    num_points: 2048  # in training, use sampled 1024 points for data augmentation. 
+  val:
+    split: test
+    num_points: 2048  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT) 
+
+#feature_keys: pos
+num_classes: 6
+
+datatransforms:
+  train: [PointsToTensor,
+          PointCloudScaleAndTranslate
+  ]  # rotation does not help
+  vote: [PointCloudScaleAndTranslate]
+  val: [PointsToTensor]
+  kwargs:
+    shift: [0.2, 0.2, 0.2]
+dataloader:
+  num_workers: 6
+
+batch_size: 16
+
+# ---------------------------------------------------------------------------- #
+# Training cfgs
+# ---------------------------------------------------------------------------- #
+val_fn: validate
+ignore_index: null 
+epochs: 100
+
+cls_weighed_loss: False
+
+criterion_args:
+  NAME: CrossEntropy
+  #label_smoothing: 0.2
+
+optimizer:
+ NAME: 'adamw'  # performs 1 point better than adam
+ weight_decay: 1.0e-4
+
+# lr_scheduler:
+sched: cosine
+warmup_epochs: 0
+
+min_lr: 0.001 #
+lr: 0.001 # LR linear rule.
+
+grad_norm_clip: 10
+use_voting: False
+# ---------------------------------------------------------------------------- #
+# io and misc
+# ---------------------------------------------------------------------------- #
+log_dir: 'poseestimation'
+save_freq: -1 # save epoch every xxx epochs, -1 only save last and best. 
+val_freq: 1
+
+wandb:
+  project: PointNeXt-PoseEstimation

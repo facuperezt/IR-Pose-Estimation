@@ -1,0 +1,14 @@
+/data/train/dataset/
+/data/train/labeled_pc/
+/data/train/lookup_table/
+/data/train/parts_classification/
+/data/train/train.txt
+/data/train/split/
+/data/train/unlabeled_pc/
+/data/train/welding_zone/
+/data/train/welding_zone_comp/
+/data/train/test.txt
+/data/ss_lookup_table/
+/log/
+/openpoints/
+/PE/.idea

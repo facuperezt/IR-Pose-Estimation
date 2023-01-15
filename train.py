@@ -49,13 +49,7 @@ class TrainPointNet2():
         # delete middle files
         os.system('rm -rf %s'%(path_aug))
 
-    def train(self,
-              log_dir,
-              gpu = 0,
-              num_point=2048,
-              max_epoch = 100,
-              batch_size = 16,
-              learning_rate = 0.001):
+    def train(self):
         '''Train network
         
         Args:
@@ -66,11 +60,13 @@ class TrainPointNet2():
             batch_size (int): Batch Size during training [default: 16]
             learning_rate (float): Initial learning rate [default: 0.001]
         '''
-        args = " --log_dir='"+log_dir+"' --gpu="+str(gpu)+" --num_point="+str(num_point)+" --max_epoch="+str(max_epoch)+\
-            " --batch_size="+str(batch_size)+" --learning_rate="+str(learning_rate)
-        path_to_train = './single_spot_table/seg_train.py'
-        os.system('python '+path_to_train+args)
+        args = " --cfg cfgs/PoseEstimation/pointnext-s.yaml"
+        path_to_train = './examples/segmentation/main.py'
+        os.system('CUDA_VISIBLE_DEVICES=0 python '+path_to_train+args)
+
+
 if __name__ == '__main__':
     train = TrainPointNet2(path_data='./data')
-    train.train(log_dir='./data/seg_model')
+    train.make_dataset()
+    train.train()
     
