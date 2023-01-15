@@ -22,8 +22,9 @@ def parse_args():
     parser.add_argument('--skip_sampling', action='store_true', help='If flag is present sampling won\'t be executed')
     parser.add_argument('--skip_slicing', action='store_true', help='If flag is present slicing won\'t be executed')
     parser.add_argument('-s', '--skip_both', action='store_true', help='If flag is present sampling AND slicing will be skipped')
-    parser.add_argument('--label', type=str, default='PDL', help='Type of splitting, default "PDL". To skip splitting use "skip_split"')
     parser.add_argument('--fast_sampling', action='store_true', help='If flag is active, meshes with high vertex density are uniformly sampled into pointclouds (fast boi)')
+    parser.add_argument('--free_cores', type=int, default=2, help='Amount of NOT USED cores "used_cores = total_cores - free_cores"')
+    parser.add_argument('--label', type=str, default='PDL', help='Type of splitting, default "PDL". To skip splitting use "skip_split"')
 
     return parser.parse_args()
 
@@ -97,7 +98,7 @@ class LookupTable():
                     old_name = os.path.splitext(file)[0]
                     if not old_name == component:
                         os.rename(os.path.join(self.path_models,component,file),os.path.join(self.path_models,component,component+'.mtl'))
-    def make(self):
+    def make(self, free_cores = 1):
         if self.label == 'PDL':
             self.path_classes = os.path.join(BASE, 'data', 'train', 'parts_classification')
             pdl = PDL(path_models=os.path.join(BASE, 'data', 'train', 'models'),
@@ -156,7 +157,7 @@ class LookupTable():
                     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                     sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
         elif not self.skip_sampling:
-            nr_processes = min(len(folders) - 1, cpu_count() - 1)
+            nr_processes = max(min(len(folders) - 1, cpu_count() - free_cores), 1)
             folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
             k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
             split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
@@ -195,6 +196,7 @@ class LookupTable():
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         elif not self.skip_slicing:
+            nr_processes = max(min(len(folders) - 1, cpu_count() - free_cores), 1)
             files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
             k, m = divmod(len(files), nr_processes)                                                    # divide among processors
             split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
@@ -229,27 +231,35 @@ class LookupTable():
 
 if __name__ == '__main__':
     args = parse_args()
-    lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
-         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both, fast_sampling=args.fast_sampling)
+    lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes='./data/train/parts_classification', pcl_density=40, crop_size=400, num_points=2048,\
+         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
     if args.profile:
-        from foundation import points2pcd, load_pcd_data, fps
-        os.system('mv data data_tmp')
-        lp = LineProfiler()
-        lp.add_function(slice.WeldScene.__init__)
-        lp.add_function(slice.WeldScene.crop)
-        lp.add_function(slice.slice_one)
-        lp.add_function(sample_and_label)
-        lp.add_function(points2pcd)
-        lp.add_function(load_pcd_data)
-        lp.add_function(fps)
-        start = time.time()
-        lp_wrapper = lp(lut.make)
-        lp_wrapper()
-        print('\n'.join(['='*25]*2))
-        print(f'Total duration: {time.time() - start:.4f}s')
-        print('\n'.join(['='*25]*2))
-        lp.print_stats()
-        os.system('rm -r data')
-        os.system('mv data_tmp data')
+        from utils.foundation import points2pcd, load_pcd_data, fps
+        os.system('cp -r data data_tmp')
+        try:
+            lp = LineProfiler()
+            lp.add_function(slice.WeldScene.__init__)
+            lp.add_function(slice.WeldScene.crop)
+            lp.add_function(slice.slice_one)
+            lp.add_function(sample_and_label)
+            lp.add_function(points2pcd)
+            lp.add_function(load_pcd_data)
+            lp.add_function(slice.merge_lookup_table)
+            lp.add_function(slice.get_feature_dict)
+            lp.add_function(slice.decrease_lib)
+            lp.add_function(slice.move_files)
+            lp.add_function(slice.norm_index)
+            start = time.time()
+            lp_wrapper = lp(lut.make)
+            lp_wrapper()
+            print('\n'.join(['='*25]*2))
+            print(f'Total duration: {time.time() - start:.4f}s')
+            print('\n'.join(['='*25]*2))
+            lp.print_stats()
+        except Exception as e:
+            print(e)
+        finally:
+            os.system('rm -r data')
+            os.system('mv data_tmp data')
     else:
-        lut.make()
+        lut.make(args.free_cores)

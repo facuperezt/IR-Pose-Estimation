@@ -159,7 +159,6 @@ def sample_and_label_alternative(path, path_pcd, path_xyz, label_dict, class_dic
     label_count = 0
 
     allpoints = np.zeros(shape=(1,4))
-    print(files)
     for file in files:
         if os.path.splitext(file)[1] == '.obj':
             # load mesh
