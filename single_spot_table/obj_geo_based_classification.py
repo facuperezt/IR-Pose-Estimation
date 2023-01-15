@@ -20,7 +20,7 @@ from sklearn.cluster import SpectralClustering
 from sklearn.metrics import calinski_harabasz_score
 import pickle
 import matplotlib.pyplot as plt
-from utils.compatibility import listdir
+from compatibility import listdir
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
