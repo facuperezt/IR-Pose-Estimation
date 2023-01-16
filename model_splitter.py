@@ -18,7 +18,8 @@ def _get_individual_models(path:str, test_model_names:List[str] = None) -> Dict:
     train_dic = {}
     test_dic = {}
     for obj in objs:
-        model = os.path.splitext(obj)[0]
+        model, ext = os.path.splitext(obj)
+        if ext not in ['.obj', '.xml', '.mtl']: continue
         dic = test_dic if model in test_model_names else train_dic
         dic.setdefault(model, []).append(obj)
 
