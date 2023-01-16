@@ -121,7 +121,7 @@ class LookupTable():
 
             elif not self.profile and not self.skip_splitting:
                 nr_processes = max(min(len(components) - 1, cpu_count() - free_cores), 1)
-                components = [component for component in components if os.path.isdir(os.path.join(path_split, components))]    # remove non-folders
+                components = [component for component in components if os.path.isdir(os.path.join(pdl.path_split, components))]    # remove non-folders
                 k, m = divmod(len(components), nr_processes)                                                    # divide among processors
                 split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
                 args = split_components
