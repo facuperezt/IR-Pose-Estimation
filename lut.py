@@ -120,13 +120,11 @@ class LookupTable():
                             pdl.split(os.path.join(path_to_comp, file))
 
             elif not self.profile and not self.skip_splitting:
-                nr_processes = max(min(len(components) - 1, cpu_count() - free_cores), 1)
-                print(pdl.path_split)
                 components = [component for component in components if os.path.isdir(os.path.join(pdl.path_models, component))]    # remove non-folders
+                nr_processes = max(min(len(components), cpu_count() - free_cores), 1)
                 k, m = divmod(len(components), nr_processes)                                                    # divide among processors
                 split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
                 args = split_components
-                print(args)
                 print (f'splitting... {nr_processes} workers ...', components)
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                 with Pool(nr_processes) as p:
@@ -183,8 +181,8 @@ class LookupTable():
                     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                     sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
         elif not self.skip_sampling:
-            nr_processes = max(min(len(folders) - 1, cpu_count() - free_cores), 1)
             folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
+            nr_processes = max(min(len(folders), cpu_count() - free_cores), 1)
             k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
             split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split, self.fast_sampling]]*nr_processes
@@ -222,8 +220,8 @@ class LookupTable():
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         elif not self.skip_slicing:
-            nr_processes = max(min(len(files) - 1, cpu_count() - free_cores), 1)
             files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
+            nr_processes = max(min(len(files), cpu_count() - free_cores), 1)
             k, m = divmod(len(files), nr_processes)                                                    # divide among processors
             split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             repeated_args = [[path_welding_zone, path_lookup_table, self.crop_size, self.num_points, path_pcd, self.path_models]]*nr_processes
