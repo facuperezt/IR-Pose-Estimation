@@ -289,7 +289,7 @@ class PFE():
                     features.append(feature)
                 features = np.asarray(features)
             else:
-                features = self.extract_features_from_mesh_parallel(files, 12)
+                features = self.extract_features_from_mesh_parallel(files, 1)
                 
             # save features
             np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
