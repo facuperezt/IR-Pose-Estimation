@@ -17,6 +17,8 @@ def _get_individual_models(path:str, test_model_names:List[str] = None) -> Dict:
     objs = listdir(path)
     train_dic = {}
     test_dic = {}
+    if test_model_names is None:
+        test_model_names = []
     for obj in objs:
         model, ext = os.path.splitext(obj)
         if ext not in ['.obj', '.xml', '.mtl']: continue
