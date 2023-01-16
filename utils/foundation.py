@@ -7,7 +7,8 @@ import random
 import copy
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from numba import jit, njit, float64, int64, boolean
+if sys.version[0] == '3':
+    from numba import jit, njit, float64, int64, boolean
 
 def obj2pcd(path_obj, path_pcd):
     if not os.path.exists(path_pcd):
@@ -112,56 +113,6 @@ def show_obj(path):
             geometries.append(mesh)
     o3d.visualization.draw_geometries(geometries, path)
 
-    
-
-@njit(float64[:, :](float64[:, :], int64[:], int64[:], float64[:], int64))
-def fps_loop(points, points_left, sample_inds, dists, n_samples):
-    # Iteratively select points for a maximum of n_samples
-    for i in range(1, n_samples):
-        # Find the distance to the last added point in selected
-        # and all the others
-        last_added = sample_inds[i-1]
-        # arg1 = points[last_added][np.array([0,1,2])].repeat(points_left.shape[0]).reshape(points_left.shape[0], -1)
-        # arg2 = points[points_left][:,np.array([0,1,2])]
-        arg1 = points[last_added][np.array([0,1,2])]
-        arg2 = points[points_left][:,np.array([0,1,2])]
-        dist_to_last_added_point = np.power(arg1 - arg2 ,2).sum(-1)
-
-        dists[points_left] = np.minimum(dist_to_last_added_point,
-                                        dists[points_left]) # [P - i]
-
-        # distance to the sampled points
-        selected = np.argmax(dists[points_left])
-        sample_inds[i] = points_left[selected]
-
-        # Update points_left
-        points_left = np.delete(points_left, selected)
-
-    # dist_to_centroid = (((points - points.mean(axis=0, keepdims= True))**2).sum(axis=1))**0.5
-    # sorted_inds = np.argsort(dist_to_centroid)[-n_samples:]
-
-    return points[sample_inds]
-
-@njit(float64[:, :](float64[:, :], int64))
-def fps(points, n_samples):
-    """
-    points: [N, >=3] array containing the whole point cloud
-    n_samples: samples you want in the sampled point cloud typically << N
-    """
-    # if type(points) != np.ndarray:
-    #     points = np.array(points)
-    
-    # Represent the points by their indices in points
-    points_left = np.arange(len(points), dtype =np.int64) # [P]
-    # Initialise an array for the sampled indices
-    sample_inds = np.zeros(n_samples, dtype=np.int64) # [S]
-    # Initialise distances to inf
-    dists = np.ones_like(points_left) * np.inf # [P]
-
-    selected = 0
-    sample_inds[0] = points_left[selected]
-    points_left = np.delete(points_left, selected)  # [P - 1]
-    return fps_loop(points, points_left, sample_inds, dists, n_samples)
 
 def fps_nojit(points, n_samples):
     """
@@ -202,7 +153,59 @@ def fps_nojit(points, n_samples):
     # sorted_inds = np.argsort(dist_to_centroid)[-n_samples:]
     
     return points[sample_inds]
+    
+if sys.version[0] == '3':
+    @njit(float64[:, :](float64[:, :], int64[:], int64[:], float64[:], int64))
+    def fps_loop(points, points_left, sample_inds, dists, n_samples):
+        # Iteratively select points for a maximum of n_samples
+        for i in range(1, n_samples):
+            # Find the distance to the last added point in selected
+            # and all the others
+            last_added = sample_inds[i-1]
+            # arg1 = points[last_added][np.array([0,1,2])].repeat(points_left.shape[0]).reshape(points_left.shape[0], -1)
+            # arg2 = points[points_left][:,np.array([0,1,2])]
+            arg1 = points[last_added][np.array([0,1,2])]
+            arg2 = points[points_left][:,np.array([0,1,2])]
+            dist_to_last_added_point = np.power(arg1 - arg2 ,2).sum(-1)
 
+            dists[points_left] = np.minimum(dist_to_last_added_point,
+                                            dists[points_left]) # [P - i]
+
+            # distance to the sampled points
+            selected = np.argmax(dists[points_left])
+            sample_inds[i] = points_left[selected]
+
+            # Update points_left
+            points_left = np.delete(points_left, selected)
+
+        # dist_to_centroid = (((points - points.mean(axis=0, keepdims= True))**2).sum(axis=1))**0.5
+        # sorted_inds = np.argsort(dist_to_centroid)[-n_samples:]
+
+        return points[sample_inds]
+
+    @njit(float64[:, :](float64[:, :], int64))
+    def fps(points, n_samples):
+        """
+        points: [N, >=3] array containing the whole point cloud
+        n_samples: samples you want in the sampled point cloud typically << N
+        """
+        # if type(points) != np.ndarray:
+        #     points = np.array(points)
+        
+        # Represent the points by their indices in points
+        points_left = np.arange(len(points), dtype =np.int64) # [P]
+        # Initialise an array for the sampled indices
+        sample_inds = np.zeros(n_samples, dtype=np.int64) # [S]
+        # Initialise distances to inf
+        dists = np.ones_like(points_left) * np.inf # [P]
+
+        selected = 0
+        sample_inds[0] = points_left[selected]
+        points_left = np.delete(points_left, selected)  # [P - 1]
+        return fps_loop(points, points_left, sample_inds, dists, n_samples)
+else:
+    fps = fps_nojit
+    
 if __name__ == '__main__':
     import time
     points :np.ndarray = np.load('points.npy')
