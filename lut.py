@@ -120,12 +120,12 @@ class LookupTable():
                             pdl.split(os.path.join(path_to_comp, file))
 
             elif not self.profile and not self.skip_splitting:
-                nr_processes = max(min(len(folders) - 1, cpu_count() - free_cores), 1)
-                folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
-                k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
-                split_components = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+                nr_processes = max(min(len(components) - 1, cpu_count() - free_cores), 1)
+                components = [component for component in components if os.path.isdir(os.path.join(path_split, components))]    # remove non-folders
+                k, m = divmod(len(components), nr_processes)                                                    # divide among processors
+                split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
                 args = split_components
-                print (f'splitting... {nr_processes} workers ...', folders)
+                print (f'splitting... {nr_processes} workers ...', components)
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                 with Pool(nr_processes) as p:
                     p.map(pdl.split_parallel, [_args for _args in args])
