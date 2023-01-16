@@ -21,6 +21,9 @@ from sklearn.metrics import calinski_harabasz_score
 import pickle
 import matplotlib.pyplot as plt
 from compatibility import listdir
+from line_profiler import LineProfiler
+import time
+from multiprocessing import Pool, cpu_count
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
@@ -45,11 +48,22 @@ class PFE():
                  path_models:str,
                  path_split:str,
                  path_label_temp: str,
-                 path_classes: str):
+                 path_classes: str,
+                 parallel: bool= True):
         self.path_models = path_models
         self.path_split = path_split
         self.path_label_temp = path_label_temp
         self.path_classes = path_classes
+        self.parallel = parallel
+
+    def split_parallel(self, components):
+        for comp in components:
+            path_to_comp = os.path.join(pfe.path_models, comp)
+            files = listdir(path_to_comp)
+            for file in files:
+                if os.path.splitext(file)[1] == '.obj':
+                    pfe.split(os.path.join(path_to_comp, file))
+
 
     def split(self, path_file:str):
         '''Take the assembly apart
@@ -169,8 +183,9 @@ class PFE():
             feature(np.ndarray): A feature descriptor
         '''
         feature = np.zeros(shape=(26,), dtype=np.float64)
-        mesh = trimesh.load_mesh(path_to_mesh)
+        mesh = trimesh.load_mesh(path_to_mesh, validate=True)
         mesh.remove_duplicate_faces()
+        mesh.remove_degenerate_faces()
         # move the coordinate system to the inertia principal axis
         mesh.apply_transform(mesh.principal_inertia_transform)
 
@@ -227,8 +242,33 @@ class PFE():
                         # ignore some noise mesh faces
                         if len(lines) > 10:
                             f.writelines(os.path.join(self.path_split, component, file)+'\n')
-                            
-    def label(self):
+
+    
+    def extract_features_from_mesh_parallel(self, files, free_cores= 2):
+        nr_processes = max(min(len(files), cpu_count() - free_cores), 1)
+        k, m = divmod(len(files), nr_processes)                                                    # divide among processors
+        split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        print (f'Extracting features ... {nr_processes} workers ... {len(files)} files')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        with Pool(nr_processes) as p:
+            q = p.map(self._extract_features_from_mesh_worker, split_files)
+        features = np.concatenate(q)
+        print('Extraction finished')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        return features
+
+    
+    def _extract_features_from_mesh_worker(self, files):
+        features = []
+        for file in files:
+            feature = self.extract_feature_from_mesh(file.strip())
+            features.append(feature)
+        features = np.asarray(features)
+        return features
+        
+    
+    def label(self, feats= None):
         '''Automatic labeling
         Cluster analysis, each cluster is a class
         Args:
@@ -236,18 +276,25 @@ class PFE():
         Returns:
             None
         '''
-        features = []
-        labels_dict = {}
-        # load all disassembled parts
-        files = open(os.path.join(ROOT, self.path_split, 'all_parts.txt'), 'r').readlines()
-        
-        # extract features
-        for file in files:
-            feature = self.extract_feature_from_mesh(file.strip())
-            features.append(feature)
-        features = np.asarray(features)
-        # save features
-        np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
+        if feats is None:
+            features = []
+            labels_dict = {}
+            # load all disassembled parts
+            files = open(os.path.join(ROOT, self.path_split, 'all_parts.txt'), 'r').readlines()
+            
+            if not self.parallel:
+                # extract features
+                for file in files:
+                    feature = self.extract_feature_from_mesh(file.strip())
+                    features.append(feature)
+                features = np.asarray(features)
+            else:
+                features = self.extract_features_from_mesh_parallel(files, 12)
+                
+            # save features
+            np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
+        else:
+            features = feats
         # features = np.load(ROOT+'/data/train/split/features.npy')
         # label special cases, usually not used
         # features, files, labels_dict = label_special_cases(features, files)
@@ -269,7 +316,7 @@ class PFE():
         gamma_finl = 0
         n_finl = 0
         score_finl = 0
-        for _, gamma in enumerate((0.001, 0.005, 0.1, 0.5, 1)):
+        for _, gamma in enumerate((0.01, 0.1, 0.5, 1)):
             for n in range(3,20):
                 y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
                 score = calinski_harabasz_score(features_norma, y_pred)
@@ -382,22 +429,32 @@ class PFE():
             show_obj(self.path_label_temp+'/'+str(i))
         # show_obj('../data/train/label_temp_folder/special_cases')
 
-if __name__ == '__main__':
-    pfe = PFE(path_models=os.path.join(ROOT, 'data', 'train', 'models'),
-              path_split=os.path.join(ROOT, 'data', 'train', 'split'),
-              path_label_temp=os.path.join(ROOT, 'data', 'train', 'label_temp_folder'),
-              path_classes=os.path.join(ROOT, 'data', 'train', 'parts_classification'))
+def main(pfe):
     # 1. take the assembly apart
     print ('Ensure that the components to be split are placed in the required directory format')
     input('(Press Enter)')
     print ('Step1. Split the assembly')
     components = listdir(pfe.path_models)
-    for comp in components:
-        path_to_comp = os.path.join(pfe.path_models, comp)
-        files = listdir(path_to_comp)
-        for file in files:
-            if os.path.splitext(file)[1] == '.obj':
-                pfe.split(os.path.join(path_to_comp, file))
+    if not pfe.parallel:
+        for comp in components:
+            path_to_comp = os.path.join(pfe.path_models, comp)
+            files = listdir(path_to_comp)
+            for file in files:
+                if os.path.splitext(file)[1] == '.obj':
+                    pfe.split(os.path.join(path_to_comp, file))
+    else:
+        components = [component for component in components if os.path.isdir(os.path.join(pfe.path_models, component))]    # remove non-folders
+        nr_processes = max(min(len(components), cpu_count() - 2), 1)
+        k, m = divmod(len(components), nr_processes)                                                    # divide among processors
+        split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        args = split_components
+        print (f'splitting... {nr_processes} workers ... {len(components)} components')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        with Pool(nr_processes) as p:
+            p.map(pfe.split_parallel, [_args for _args in args])
+
+        print('splitting finished')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
     pfe.write_all_parts()
     input('(Press Enter)')
     # 2. label these parts
@@ -470,4 +527,26 @@ if __name__ == '__main__':
         show_obj(pfe.path_classes+'/class_'+str(i))
     print ('FINISHED!')
 
+    
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1 and sys.argv[1] == 'profile':
+        parallel = False
+    else:
+        parallel = True
+    pfe = PFE(path_models=os.path.join(ROOT, 'data', 'train', 'models'),
+              path_split=os.path.join(ROOT, 'data', 'train', 'split'),
+              path_label_temp=os.path.join(ROOT, 'data', 'train', 'label_temp_folder'),
+              path_classes=os.path.join(ROOT, 'data', 'train', 'parts_classification'),
+              parallel= parallel)
+    if not parallel:
+        lp = LineProfiler()
+        lp.add_function(pfe.extract_feature_from_mesh)
+        lp.add_function(pfe.split)
+        lp.add_function(pfe.label)
+        lp_wrapper = lp(main)
+        lp_wrapper(pfe)
+        lp.print_stats()
+    else:
+        main(pfe)
     

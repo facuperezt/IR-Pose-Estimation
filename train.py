@@ -42,7 +42,7 @@ class TrainPointNet2():
         # random scale and augmentation     
         processData(path_wzc, path_aug, crop_size, num_points)
         # split trainset and testset
-        wirteFiles(path_aug, test_model_name='Reisch')
+        wirteFiles(path_aug, test_model_name='1170138_ROB_2')
         # wirte h5 format file
         write_data_label_hdf5(os.path.join(self.path_train,'train.txt'), self.path_dataset+'/seg_dataset_train_',2048)
         write_data_label_hdf5(os.path.join(self.path_train,'test.txt'), self.path_dataset+'/seg_dataset_test_',2048)
