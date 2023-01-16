@@ -163,7 +163,7 @@ class LookupTable():
             split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split, self.fast_sampling]]*nr_processes
             args = [[_folders, *_args] for _args, _folders in zip(repeated_args, split_folders)]
-            print ('sampling... ...', folders)
+            print (f'sampling... {nr_processes} workers ...', folders)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             with Pool(nr_processes) as p:
                 p.map(sample_and_label_parallel, [_args for _args in args])
@@ -204,7 +204,7 @@ class LookupTable():
             args = [[_files, *_args] for _args, _files in zip(repeated_args, split_files)]
 
 
-            print ('slicing... ...', files)
+            print (f'slicing... {nr_processes} workers ...', files)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
             with Pool(nr_processes) as p:
