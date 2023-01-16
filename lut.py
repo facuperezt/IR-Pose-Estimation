@@ -105,15 +105,36 @@ class LookupTable():
                 path_split=os.path.join(BASE, 'data', 'train', 'split'),
                 path_classes=self.path_classes)
             components = listdir(pdl.path_models)
-            for comp in components:
-                if comp.startswith('.'): continue
-                path_to_comp = os.path.join(pdl.path_models, comp)
-                files = listdir(path_to_comp)
-                for file in files:
-                    if os.path.splitext(file)[1] == '.obj':
-                        pdl.split(os.path.join(path_to_comp, file))
+
+
+            if self.profile:
+                for comp in components:
+                    if comp.startswith('.'): continue
+                    path_to_comp = os.path.join(pdl.path_models, comp)
+                    files = listdir(path_to_comp)
+                    for file in files:
+                        if os.path.splitext(file)[1] == '.obj':
+                            pdl.split(os.path.join(path_to_comp, file))
+
+            elif not self.profile and not self.skip_splitting:
+                nr_processes = max(min(len(folders) - 1, cpu_count() - free_cores), 1)
+                folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
+                k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
+                split_components = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+                args = split_components
+                print (f'splitting... {nr_processes} workers ...', folders)
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+                with Pool(nr_processes) as p:
+                    p.map(pdl.split_parallel, [_args for _args in args])
+
+                print('splitting finished')
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            else:
+                raise ValueError('Weird param combination')
+
             pdl.write_all_parts()
             pdl.label()
+            
         elif self.label == 'HFD':
             self.path_classes = self.hfd_path_classes
         elif self.label == 'skip_split':
