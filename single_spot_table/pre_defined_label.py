@@ -5,6 +5,7 @@
 import os
 import sys
 import pickle
+from utils.compatibility import listdir
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
@@ -31,7 +32,7 @@ class PDL():
         self.path_split = path_split
         self.path_classes = path_classes
         # save class list
-        # components = os.listdir(self.path_models)
+        # components = listdir(self.path_models)
         # class_dict = {}
         # label_count = 0
         # for component in components:
@@ -103,10 +104,10 @@ class PDL():
         Returns:
             None
         '''
-        all_components = os.listdir(self.path_split)
+        all_components = listdir(self.path_split)
         with open(os.path.join(self.path_split, 'all_parts.txt'), 'w') as f:
             for component in all_components:
-                files = os.listdir(os.path.join(self.path_split, component))
+                files = listdir(os.path.join(self.path_split, component))
                 for file in files:
                     if os.path.splitext(file)[1] == '.obj':                
                         content = open(os.path.join(self.path_split, component, file), 'r')
@@ -137,10 +138,10 @@ if __name__ == '__main__':
     pfe = PDL(path_models=os.path.join(ROOT, 'data', 'train', 'models'),
               path_split=os.path.join(ROOT, 'data', 'train', 'split'),
               path_classes=os.path.join(ROOT, 'data', 'train', 'parts_classification'))
-    components = os.listdir(pfe.path_models)
+    components = listdir(pfe.path_models)
     for comp in components:
         path_to_comp = os.path.join(pfe.path_models, comp)
-        files = os.listdir(path_to_comp)
+        files = listdir(path_to_comp)
         for file in files:
             if os.path.splitext(file)[1] == '.obj':
                 pfe.split(os.path.join(path_to_comp, file))

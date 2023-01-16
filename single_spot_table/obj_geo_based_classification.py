@@ -20,6 +20,7 @@ from sklearn.cluster import SpectralClustering
 from sklearn.metrics import calinski_harabasz_score
 import pickle
 import matplotlib.pyplot as plt
+from compatibility import listdir
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
@@ -215,10 +216,10 @@ class PFE():
         Returns:
             None
         '''
-        all_components = os.listdir(self.path_split)
+        all_components = listdir(self.path_split)
         with open(os.path.join(self.path_split, 'all_parts.txt'), 'w') as f:
             for component in all_components:
-                files = os.listdir(os.path.join(self.path_split, component))
+                files = listdir(os.path.join(self.path_split, component))
                 for file in files:
                     if os.path.splitext(file)[1] == '.obj':                
                         content = open(os.path.join(self.path_split, component, file), 'r')
@@ -390,10 +391,10 @@ if __name__ == '__main__':
     print ('Ensure that the components to be split are placed in the required directory format')
     input('(Press Enter)')
     print ('Step1. Split the assembly')
-    components = os.listdir(pfe.path_models)
+    components = listdir(pfe.path_models)
     for comp in components:
         path_to_comp = os.path.join(pfe.path_models, comp)
-        files = os.listdir(path_to_comp)
+        files = listdir(path_to_comp)
         for file in files:
             if os.path.splitext(file)[1] == '.obj':
                 pfe.split(os.path.join(path_to_comp, file))

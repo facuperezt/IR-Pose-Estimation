@@ -12,6 +12,8 @@ import random
 import sys
 import scipy.linalg as linalg
 import math
+from compatibility import listdir
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 TF_OPS_DIR = os.path.join(ROOT, 'pointnet2', 'tf_ops')
@@ -248,7 +250,7 @@ def infer_all_sep(path_test_component=None):
     if not path_test_component == None:
         folders = [os.path.split(path_test_component)[-1]]
     else:
-        folders = os.listdir(INPUT_PATH)
+        folders = listdir(INPUT_PATH)
     for folder in folders:
         if not os.path.exists(ROOT+'/data/test/results/'+folder):
             os.makedirs(ROOT+'/data/test/results/'+folder)
@@ -257,7 +259,7 @@ def infer_all_sep(path_test_component=None):
         match_dict = {}
         # get the test slices of a component
         slices_path = os.path.join(INPUT_PATH, folder)
-        files = os.listdir(slices_path)
+        files = listdir(slices_path)
         t = []
         num_t = 0
         for file in files:
@@ -345,9 +347,9 @@ def infer_all_sep(path_test_component=None):
 if __name__=='__main__':
     infer_all_sep(TEST_COMP)
     path = ROOT+'/data/test/results'
-    folders = os.listdir(path)
+    folders = listdir(path)
     for folder in folders:
-        files = os.listdir(os.path.join(path, folder))
+        files = listdir(os.path.join(path, folder))
         xml_list = []
         for file in files:
             if os.path.splitext(file)[1] == '.xml':
