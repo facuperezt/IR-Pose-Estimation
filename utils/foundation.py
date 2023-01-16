@@ -207,6 +207,7 @@ else:
     fps = fps_nojit
     
 if __name__ == '__main__':
+    pass
     # import time
     # points :np.ndarray = np.load('points.npy')
     # pc = o3d.geometry.PointCloud()
