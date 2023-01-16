@@ -243,7 +243,23 @@ class PFE():
                         if len(lines) > 10:
                             f.writelines(os.path.join(self.path_split, component, file)+'\n')
 
-    def extract_feature_from_mesh_parallel(self, files):
+    
+    def extract_features_from_mesh_parallel(self, files, free_cores= 2):
+        nr_processes = max(min(len(files), cpu_count() - free_cores), 1)
+        k, m = divmod(len(files), nr_processes)                                                    # divide among processors
+        split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        print (f'Extracting features ... {nr_processes} workers ... {len(files)} files')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+        with Pool(nr_processes) as p:
+            q = p.map(self._extract_features_from_mesh_worker, split_files)
+        features = np.concatenate(q)
+        print('Extraction finished')
+        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        return features
+
+    
+    def _extract_features_from_mesh_worker(self, files):
         features = []
         for file in files:
             feature = self.extract_feature_from_mesh(file.strip())
@@ -251,6 +267,7 @@ class PFE():
         features = np.asarray(features)
         return features
         
+    
     def label(self, feats= None):
         '''Automatic labeling
         Cluster analysis, each cluster is a class
@@ -272,23 +289,10 @@ class PFE():
                     features.append(feature)
                 features = np.asarray(features)
             else:
-                nr_processes = max(min(len(files), cpu_count() - 2), 1)
-                k, m = divmod(len(files), nr_processes)                                                    # divide among processors
-                split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
-                print (f'Extracting features ... {nr_processes} workers ... {len(files)} files')
-                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-                with Pool(nr_processes) as p:
-                    q = p.map(self.extract_feature_from_mesh_parallel, split_files)
-                print(type(q), len(q))
-                features = np.concatenate(q)
-                p.close()
+                features = self.extract_features_from_mesh_parallel(files, 12)
                 
-
-                print('Extraction finished')
-                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             # save features
             np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
-            print('features saved')
         else:
             features = feats
         # features = np.load(ROOT+'/data/train/split/features.npy')
@@ -312,7 +316,7 @@ class PFE():
         gamma_finl = 0
         n_finl = 0
         score_finl = 0
-        for _, gamma in enumerate((0.1, 0.5, 1)):
+        for _, gamma in enumerate((0.01, 0.1, 0.5, 1)):
             for n in range(3,20):
                 y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
                 score = calinski_harabasz_score(features_norma, y_pred)
