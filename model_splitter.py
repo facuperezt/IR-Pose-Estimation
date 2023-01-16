@@ -51,7 +51,8 @@ def split_models(in_path: str, out_path: str, test_path:str = None, test_model_n
 
 if __name__ == '__main__':
     args = parse_args()
-    os.system('mv data data_last')
+    if os.path.exists('./data'):
+        os.system('mv data data_last')
     if args.dataset in ['1', '2']:
         split_models(f'Dataset/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)
     elif args.dataset == 'trailer':
