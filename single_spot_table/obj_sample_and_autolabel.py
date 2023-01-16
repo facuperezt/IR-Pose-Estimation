@@ -251,7 +251,7 @@ class PFE():
         features = np.asarray(features)
         return features
         
-    def label(self):
+    def label(self, feats= None):
         '''Automatic labeling
         Cluster analysis, each cluster is a class
         Args:
@@ -259,32 +259,38 @@ class PFE():
         Returns:
             None
         '''
-        features = []
-        labels_dict = {}
-        # load all disassembled parts
-        files = open(os.path.join(ROOT, self.path_split, 'all_parts.txt'), 'r').readlines()
-        
-        if not self.parallel:
-            # extract features
-            for file in files:
-                feature = self.extract_feature_from_mesh(file.strip())
-                features.append(feature)
-            features = np.asarray(features)
-        else:
-            nr_processes = max(min(len(files), cpu_count()), 1)
-            k, m = divmod(len(files), nr_processes)                                                    # divide among processors
-            split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
-            print (f'Extracting features ... {nr_processes} workers ... {len(files)} files')
-            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-            with Pool(nr_processes) as p:
-                q = p.map(self.extract_feature_from_mesh_parallel, split_files)
-            features = np.concatenate(q)
+        if feats is None:
+            features = []
+            labels_dict = {}
+            # load all disassembled parts
+            files = open(os.path.join(ROOT, self.path_split, 'all_parts.txt'), 'r').readlines()
             
+            if not self.parallel:
+                # extract features
+                for file in files:
+                    feature = self.extract_feature_from_mesh(file.strip())
+                    features.append(feature)
+                features = np.asarray(features)
+            else:
+                nr_processes = max(min(len(files), cpu_count() - 2), 1)
+                k, m = divmod(len(files), nr_processes)                                                    # divide among processors
+                split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+                print (f'Extracting features ... {nr_processes} workers ... {len(files)} files')
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+                with Pool(nr_processes) as p:
+                    q = p.map(self.extract_feature_from_mesh_parallel, split_files)
+                print(type(q), len(q))
+                features = np.concatenate(q)
+                p.close()
+                
 
-            print('sampling finished')
-            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-        # save features
-        np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
+                print('Extraction finished')
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            # save features
+            np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
+            print('features saved')
+        else:
+            features = feats
         # features = np.load(ROOT+'/data/train/split/features.npy')
         # label special cases, usually not used
         # features, files, labels_dict = label_special_cases(features, files)
@@ -306,7 +312,7 @@ class PFE():
         gamma_finl = 0
         n_finl = 0
         score_finl = 0
-        for _, gamma in enumerate((0.001, 0.005, 0.1, 0.5, 1)):
+        for _, gamma in enumerate((0.1, 0.5, 1)):
             for n in range(3,20):
                 y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
                 score = calinski_harabasz_score(features_norma, y_pred)
@@ -434,7 +440,7 @@ def main(pfe):
                     pfe.split(os.path.join(path_to_comp, file))
     else:
         components = [component for component in components if os.path.isdir(os.path.join(pfe.path_models, component))]    # remove non-folders
-        nr_processes = max(min(len(components), cpu_count()), 1)
+        nr_processes = max(min(len(components), cpu_count() - 2), 1)
         k, m = divmod(len(components), nr_processes)                                                    # divide among processors
         split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
         args = split_components
