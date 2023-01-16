@@ -58,11 +58,11 @@ class PFE():
 
     def split_parallel(self, components):
         for comp in components:
-            path_to_comp = os.path.join(pfe.path_models, comp)
+            path_to_comp = os.path.join(self.path_models, comp)
             files = listdir(path_to_comp)
             for file in files:
                 if os.path.splitext(file)[1] == '.obj':
-                    pfe.split(os.path.join(path_to_comp, file))
+                    self.split(os.path.join(path_to_comp, file))
 
 
     def split(self, path_file:str):

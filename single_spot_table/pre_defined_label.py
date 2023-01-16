@@ -138,8 +138,6 @@ class PDL():
             class_dir = os.path.join(self.path_classes, class_dict[key])
             if not os.path.exists(class_dir):
                 os.makedirs(class_dir)
-            print(key)
-            print(class_dir)
             os.system('cp %s %s'%(key, class_dir))
 
 
