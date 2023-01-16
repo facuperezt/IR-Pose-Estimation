@@ -29,6 +29,8 @@ conda install cuda -c "nvidia/label/cuda-11.7.1" -y
 conda install -y pytorch=1.13.1 torchvision cudatoolkit=11.7.0 -c pytorch -c nvidia
 pip install torch-scatter -f https://data.pyg.org/whl/torch-1.13.1+cu117.html
 
+conda install -c anaconda h5py
+
 pip install -r requirements.txt
 
 # install cpp extensions, the pointnet++ library
