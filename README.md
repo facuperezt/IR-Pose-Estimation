@@ -51,6 +51,7 @@ LookupTablePN
 ### Training Step 1. Data Pre-processing & Making lookup Table
 In Python3 environment
 ```python
+from lut import LookupTable
 lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
 lut.make()
 
@@ -66,6 +67,7 @@ lut.make()
 ### Training Step 2. Train PN++
 In Python2 environment
 ```python
+from train import TrainPointNet2
 tr = TrainPointNet2(path_data='./data')
 # make dataset
 tr.make_dataset(crop_size=400, num_points=2048)
@@ -91,6 +93,7 @@ tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch
 ### Testing Step 1. Data Pre-processing
 In Python3 environment
 ```python
+from test import PoseLookup
 te = PoseLookup(path_data='./data')
 te.preprocessing(path_test_component='./data/test/models/201910292399', pcl_density=40, crop_size=400, num_points=2048)
 
@@ -108,6 +111,7 @@ te.preprocessing(path_test_component='./data/test/models/201910292399', pcl_dens
 
 In Python2 environment
 ```python
+from test import PoseLookup
 te = PoseLookup(path_data='./data')
 te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/201910292399', batch_size=16)
 ```
