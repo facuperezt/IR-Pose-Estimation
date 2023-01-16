@@ -341,7 +341,7 @@ def move_files(path_data):
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
             # print (name)
-            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp'+name+'.pkl'))
+            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp/'+name+'.pkl'))
             # os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
             #                         os.path.join(path_data, 'ss_lookup_table/dict_comp')))
 

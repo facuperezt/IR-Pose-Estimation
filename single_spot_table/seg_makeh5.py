@@ -46,22 +46,33 @@ def processData(path, path_aug, crop_size=400, NUM_POINT=2048):
             points2pcd(os.path.join(path_aug,os.path.splitext(file)[0]+'.pcd'),xyzl_d)
 
 
-def wirteFiles(path):
+def wirteFiles(path, test_model_name=None):
     """Separate training set(80%) and test set(20%)
     there is no necessary to make a val set
     """
     for root, dirs, files in os.walk(path):
         files.sort()
         for file in files:
-            rdm = random.random()
-            if 0 <= rdm < 0.8:
-                f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
-                f.write(path+'/'+file+'\n')
-                f.close()
+            if test_model_name is None:
+                rdm = random.random()
+                if 0 <= rdm < 0.8:
+                    f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+                else:
+                    f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
             else:
-                f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
-                f.write(path+'/'+file+'\n')
-                f.close()
+                if test_model_name in file:
+                    f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+                else:
+                    f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+
 
 
 

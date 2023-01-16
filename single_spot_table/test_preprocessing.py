@@ -8,7 +8,7 @@ import math
 import sys
 import copy
 import time
-from utils.compatibility import listdir
+from compatibility import listdir
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
@@ -176,7 +176,7 @@ if __name__ == '__main__':
                 
     
     ################rotataion&slice################
-    path_test = '../data/test/models'
+    path_test = 'data/test/models'
     test_files = listdir(path_test)
     for test_file in test_files:
         print ('sampling... ...', test_file)
