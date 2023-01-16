@@ -55,9 +55,11 @@ class LookupTable():
                  crop_size:int=400,
                  num_points:int=2048,
                  profile=False,
+                 skip_splitting=False,
                  skip_sampling=False,
                  skip_slicing=False,
-                 fast_sampling=False):
+                 fast_sampling=False,
+                 ):
         self.path_data = path_data
         self.path_train = os.path.join(self.path_data, 'train')
         self.path_models = os.path.join(self.path_train, 'models')
@@ -68,6 +70,7 @@ class LookupTable():
         self.crop_size = crop_size
         self.num_points = num_points
         self.profile = profile
+        self.skip_splitting = skip_splitting
         self.skip_sampling = skip_sampling
         self.skip_slicing = skip_slicing
         self.fast_sampling = fast_sampling
@@ -134,7 +137,7 @@ class LookupTable():
 
             pdl.write_all_parts()
             pdl.label()
-            
+
         elif self.label == 'HFD':
             self.path_classes = self.hfd_path_classes
         elif self.label == 'skip_split':
