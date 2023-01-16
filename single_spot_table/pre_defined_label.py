@@ -48,12 +48,14 @@ class PDL():
         # with open(os.path.join(self.path_classes, 'class_dict.pkl'), 'wb') as tf:
         #     pickle.dump(class_dict,tf,protocol=2)
             
-    def split_parallel(self, comp):
-        path_to_comp = os.path.join(self.path_models, comp)
-        files = listdir(path_to_comp)
-        for file in files:
-            if os.path.splitext(file)[1] == '.obj':
-                self.split(os.path.join(path_to_comp, file))
+    def split_parallel(self, args):
+        components = args
+        for comp in components:
+            path_to_comp = os.path.join(self.path_models, comp)
+            files = listdir(path_to_comp)
+            for file in files:
+                if os.path.splitext(file)[1] == '.obj':
+                    self.split(os.path.join(path_to_comp, file))
 
     def split(self, path_file:str):
         '''Take the assembly apart
