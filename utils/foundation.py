@@ -207,30 +207,30 @@ else:
     fps = fps_nojit
     
 if __name__ == '__main__':
-    import time
-    points :np.ndarray = np.load('points.npy')
-    pc = o3d.geometry.PointCloud()
-    pc.points = o3d.utility.Vector3dVector(points[:, :3])
-    o3d.visualization.draw_geometries([pc])
+    # import time
+    # points :np.ndarray = np.load('points.npy')
+    # pc = o3d.geometry.PointCloud()
+    # pc.points = o3d.utility.Vector3dVector(points[:, :3])
+    # o3d.visualization.draw_geometries([pc])
     
-    # start = time.time()
-    # _points = fps_nojit(points, 2048)
-    # print('compilation time jit : ', time.time()- start)
+    # # start = time.time()
+    # # _points = fps_nojit(points, 2048)
+    # # print('compilation time jit : ', time.time()- start)
     
+    # # start = time.time()
+    # # _points = fps_nojit(points, 2048)
+    # # print('run time jit : ', time.time()- start)
+    # # pc.points = o3d.utility.Vector3dVector(_points[:, :3])
+    # # # o3d.visualization.draw_geometries([pc])
+
     # start = time.time()
-    # _points = fps_nojit(points, 2048)
-    # print('run time jit : ', time.time()- start)
+    # _points = fps(points, 2048)
+    # print('run time njit : ', time.time()- start)
     # pc.points = o3d.utility.Vector3dVector(_points[:, :3])
-    # # o3d.visualization.draw_geometries([pc])
+    # o3d.visualization.draw_geometries([pc])
 
-    start = time.time()
-    _points = fps(points, 2048)
-    print('run time njit : ', time.time()- start)
-    pc.points = o3d.utility.Vector3dVector(_points[:, :3])
-    o3d.visualization.draw_geometries([pc])
-
-    start = time.time()
-    _points = fps_nojit(points, 2048)
-    print('run time no jit : ', time.time()- start)
-    pc.points = o3d.utility.Vector3dVector(_points[:, :3])
-    o3d.visualization.draw_geometries([pc])
+    # start = time.time()
+    # _points = fps_nojit(points, 2048)
+    # print('run time no jit : ', time.time()- start)
+    # pc.points = o3d.utility.Vector3dVector(_points[:, :3])
+    # o3d.visualization.draw_geometries([pc])
