@@ -126,6 +126,7 @@ class LookupTable():
                 k, m = divmod(len(components), nr_processes)                                                    # divide among processors
                 split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
                 args = split_components
+                print(args)
                 print (f'splitting... {nr_processes} workers ...', components)
                 print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
                 with Pool(nr_processes) as p:
