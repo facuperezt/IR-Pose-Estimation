@@ -221,7 +221,7 @@ class LookupTable():
         print ('Extract feature dictionary from point cloud slices\n')
         slice.get_feature_dict(self.path_data, path_welding_zone, path_lookup_table, label_dict_r)
         print ('Removing duplicate point cloud slices\n')
-        # slice.decrease_lib(self.path_data, self.path_train, path_welding_zone, label_dict_r)
+        slice.decrease_lib(self.path_data, self.path_train, path_welding_zone, label_dict_r)
         slice.move_files(self.path_data)
         print ('Use the normal information to generate an index for easy searching\n')
         slice.norm_index(self.path_data)
