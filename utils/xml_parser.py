@@ -103,7 +103,7 @@ def list2array(total_info):
 
             weld_info.append(spot['EA'])
 
-            if len(info['pose_frames']) > 0:
+            if len(info['pose_frames']) > 0 and len(info['pose_frames']) > i:
                 weld_info.append(info['pose_frames'][i][0][0])
                 weld_info.append(info['pose_frames'][i][1][0])
                 weld_info.append(info['pose_frames'][i][2][0])
