@@ -120,7 +120,7 @@ def list2array(total_info):
 
 
 if __name__== '__main__':
-    t = parse_frame_dump('Dataset/ds_Trailer/Reisch.xml')
+    t = parse_frame_dump('data/test/models/Reisch/Reisch.xml')
     t = list2array(t)
     print (t)
 

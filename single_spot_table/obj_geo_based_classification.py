@@ -289,7 +289,7 @@ class PFE():
                     features.append(feature)
                 features = np.asarray(features)
             else:
-                features = self.extract_features_from_mesh_parallel(files, 1)
+                features = self.extract_features_from_mesh_parallel(files, 2)
                 
             # save features
             np.save(os.path.join(ROOT, self.path_split, 'features.npy'),features)
@@ -317,7 +317,7 @@ class PFE():
         n_finl = 0
         score_finl = 0
         for _, gamma in enumerate((0.01, 0.1, 0.5, 1)):
-            for n in range(3,20):
+            for n in range(5, 12):
                 y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
                 score = calinski_harabasz_score(features_norma, y_pred)
                 if score > score_finl:
