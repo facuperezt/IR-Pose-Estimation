@@ -8,6 +8,7 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from test_preprocessing import sample_test_pc, slice_test
+from utils.compatibility import listdir
 
 class PoseLookup():
     def __init__(self,
@@ -98,6 +99,10 @@ class PoseLookup():
 if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if sys.version[0] == '3':
-        te.preprocessing(path_test_component='./data/test/models/Reisch', pcl_density=40, crop_size=400, num_points=2048)
+        if sys.argv[0] in listdir('./data/test/'):
+            test_model = sys.argv[0]
+        else:
+            test_model = 'Reisch'
+        te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
     elif sys.version[0] == '2':
         te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/Reisch', batch_size=16)

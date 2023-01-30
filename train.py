@@ -73,11 +73,11 @@ class TrainPointNet2():
         os.system('python '+path_to_train+args)
 if __name__ == '__main__':
     tr = TrainPointNet2(path_data='./data')
-    if not os.path.exists('./data/train/dataset'):
-        print('Making dataset')
+    if sys.version[0] == '3':
         # make dataset
         tr.make_dataset(crop_size=400, num_points=2048)
-    # training
-    tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
+    elif sys.version[0] == '2':
+        # training
+        tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
 
     
