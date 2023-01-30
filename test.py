@@ -102,11 +102,13 @@ if __name__ == '__main__':
         if sys.argv[0] == 'all':
             test_models = listdir('./data/test/')
             for test_model in test_models:
-                te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+                print(test_model)
+                # te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
         elif sys.argv[0] in listdir('./data/test/'):
             test_model = sys.argv[0]
         else:
             test_model = 'Reisch'
-        te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+        test_model
+        # te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
     elif sys.version[0] == '2':
         te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/Reisch', batch_size=16)
