@@ -87,7 +87,8 @@ def parse_frame_dump(xml_file):
 
                 #print(torch_frame) 
                 pose_frames.append(torch_frame)
-        if len(weld_frames) != len(pose_frames):
+
+        if len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
             bad_data_counter +=1
             print('Bad data at ', i)
             continue
