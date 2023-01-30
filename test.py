@@ -99,7 +99,11 @@ class PoseLookup():
 if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if sys.version[0] == '3':
-        if sys.argv[0] in listdir('./data/test/'):
+        if sys.argv[0] == 'all':
+            test_models = listdir('./data/test/')
+            for test_model in test_models:
+                te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+        elif sys.argv[0] in listdir('./data/test/'):
             test_model = sys.argv[0]
         else:
             test_model = 'Reisch'
