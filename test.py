@@ -126,9 +126,6 @@ if __name__ == '__main__':
             # for test_model in test_models:
             #     te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
         elif sys.argv[1] in listdir('./data/test/models'):
-            test_model = sys.argv[1]
-        else:
-            test_model = 'Reisch'
-        te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+            te.preprocessing(path_test_component='./data/test/models/' + sys.argv[1], pcl_density=40, crop_size=400, num_points=2048)
     elif sys.version[0] == '2':
         te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/Reisch', batch_size=16)

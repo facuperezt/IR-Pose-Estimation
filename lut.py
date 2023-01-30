@@ -9,7 +9,7 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
-from obj_sample_and_autolabel import sample_and_label, sample_and_label_parallel
+from obj_sample_and_autolabel import sample_and_label, sample_and_label_alternative, sample_and_label_parallel
 import slice
 from utils.compatibility import listdir
 from multiprocessing import Pool, cpu_count
@@ -179,7 +179,7 @@ class LookupTable():
                 if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
                     print ('sampling... ...', folder)
                     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-                    sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
+                    sample_and_label_alternative(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
         elif not self.skip_sampling:
             folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
             nr_processes = max(min(len(folders), cpu_count() - free_cores), 1)
@@ -262,17 +262,18 @@ if __name__ == '__main__':
         os.system('cp -r data data_tmp')
         try:
             lp = LineProfiler()
-            lp.add_function(slice.WeldScene.__init__)
-            lp.add_function(slice.WeldScene.crop)
-            lp.add_function(slice.slice_one)
-            lp.add_function(sample_and_label)
-            lp.add_function(points2pcd)
-            lp.add_function(load_pcd_data)
-            lp.add_function(slice.merge_lookup_table)
-            lp.add_function(slice.get_feature_dict)
+            # lp.add_function(slice.WeldScene.__init__)
+            # lp.add_function(slice.WeldScene.crop)
+            # lp.add_function(slice.slice_one)
+            lp.add_function(sample_and_label_alternative)
+            # lp.add_function(points2pcd)
+            # lp.add_function(load_pcd_data)
+            # lp.add_function(slice.merge_lookup_table)
+            # lp.add_function(slice.get_feature_dict)
             lp.add_function(slice.decrease_lib)
-            lp.add_function(slice.move_files)
-            lp.add_function(slice.norm_index)
+            # lp.add_function(slice.move_files)
+            # lp.add_function(slice.norm_index)
+            lp.add_function(slice.similarity)
             start = time.time()
             lp_wrapper = lp(lut.make)
             lp_wrapper()
