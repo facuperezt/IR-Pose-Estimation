@@ -100,11 +100,11 @@ if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if sys.version[0] == '3':
         if sys.argv[1] == 'all':
-            test_models = listdir('./data/test/')
+            test_models = listdir('./data/test/models')
             for test_model in test_models:
                 print(test_model)
                 # te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
-        elif sys.argv[1] in listdir('./data/test/'):
+        elif sys.argv[1] in listdir('./data/test/models'):
             test_model = sys.argv[1]
         else:
             test_model = 'Reisch'
