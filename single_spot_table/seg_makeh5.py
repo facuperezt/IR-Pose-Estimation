@@ -10,7 +10,7 @@ import open3d as o3d
 import random
 import copy
 import datetime
-from utils.compatibility import listdir
+from compatibility import listdir
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
@@ -46,22 +46,33 @@ def processData(path, path_aug, crop_size=400, NUM_POINT=2048):
             points2pcd(os.path.join(path_aug,os.path.splitext(file)[0]+'.pcd'),xyzl_d)
 
 
-def wirteFiles(path):
+def wirteFiles(path, test_model_name=None):
     """Separate training set(80%) and test set(20%)
     there is no necessary to make a val set
     """
     for root, dirs, files in os.walk(path):
         files.sort()
         for file in files:
-            rdm = random.random()
-            if 0 <= rdm < 0.8:
-                f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
-                f.write(path+'/'+file+'\n')
-                f.close()
+            if test_model_name is None:
+                rdm = random.random()
+                if 0 <= rdm < 0.8:
+                    f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+                else:
+                    f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
             else:
-                f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
-                f.write(path+'/'+file+'\n')
-                f.close()
+                if test_model_name in file:
+                    f = open(os.path.join(os.path.dirname(path),'test.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+                else:
+                    f = open(os.path.join(os.path.dirname(path),'train.txt'),'a') 
+                    f.write(path+'/'+file+'\n')
+                    f.close()
+
 
 
 
@@ -112,22 +123,22 @@ def write_data_label_hdf5(filelist, filename_prefix, NUM_POINT):
 
 
 if __name__ == "__main__":
-    
-    path = os.path.join(ROOT,'data/train/welding_zone_comp')  
-    path_aug = os.path.join(ROOT,'data/train','aug')
-    path_dataset = os.path.join(ROOT, 'data/train', 'dataset')
+    path_train = './data/train'
+    path_dataset = os.path.join(path_train, 'dataset')
+    crop_size= 400
+    num_points = 2048
+
+    path_wzc = os.path.join(path_train, 'welding_zone_comp')  
+    path_aug = os.path.join(path_train,'aug')
     if not os.path.exists(path_aug):
         os.makedirs(path_aug)
-    if not os.path.exists(path_dataset):
-        os.makedirs(path_dataset)
     
     # random scale and augmentation     
-    processData(path,repeat_num = 1, NUM_POINT = 2048)
+    processData(path_wzc, path_aug, crop_size, num_points)
     # split trainset and testset
-    wirteFiles(path_aug)
+    wirteFiles(path_aug, test_model_name='160151')
     # wirte h5 format file
-    write_data_label_hdf5(os.path.join(ROOT,'data/train','train.txt'), '../data/train/dataset/seg_dataset_train_',2048)
-    write_data_label_hdf5(os.path.join(ROOT,'data/train','test.txt'), '../data/train/dataset/seg_dataset_test_',2048)
+    write_data_label_hdf5(os.path.join(path_train,'train.txt'), path_dataset+'/seg_dataset_train_',2048)
+    write_data_label_hdf5(os.path.join(path_train,'test.txt'), path_dataset+'/seg_dataset_test_',2048)
     # delete middle files
-    os.system('rm -rf ../data/train/aug')
-
+    os.system('rm -rf %s'%(path_aug))

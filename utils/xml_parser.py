@@ -1,14 +1,37 @@
+import sys
+# Force python XML parser not faster C accelerators
+# because we can't hook the C implementation
+sys.modules['_elementtree'] = None
 import xml.etree.ElementTree as ET
 import numpy as np
 
+class LineNumberingParser(ET.XMLParser):
+    def _start_list(self, *args, **kwargs):
+        # Here we assume the default XML parser which is expat
+        # and copy its element position attributes into output Elements
+        element = super(self.__class__, self)._start_list(*args, **kwargs)
+        element._start_line_number = self.parser.CurrentLineNumber
+        element._start_column_number = self.parser.CurrentColumnNumber
+        element._start_byte_index = self.parser.CurrentByteIndex
+        return element
+
+    def _end(self, *args, **kwargs):
+        element = super(self.__class__, self)._end(*args, **kwargs)
+        element._end_line_number = self.parser.CurrentLineNumber
+        element._end_column_number = self.parser.CurrentColumnNumber
+        element._end_byte_index = self.parser.CurrentByteIndex
+        return element
+
 def parse_frame_dump(xml_file):
     '''parse xml file to get welding spots and torch poses'''
-    tree = ET.parse(xml_file)
+    tree = ET.parse(xml_file, parser= LineNumberingParser())
     root = tree.getroot()
+
+    bad_data_counter = 0
     
     total_info = [] # list of all infos about the torch, welding spots and the transformation matrix
 
-    for SNaht in root.findall('SNaht'):
+    for i,SNaht in enumerate(root.findall('SNaht')):
         
         torch = [SNaht.get('Name'), SNaht.get('ZRotLock'), SNaht.get('WkzName'), SNaht.get('WkzWkl')]
         weld_frames = [] # list of all weld_frames as np.arrays(X,Y,Z) in mm
@@ -64,9 +87,14 @@ def parse_frame_dump(xml_file):
 
                 #print(torch_frame) 
                 pose_frames.append(torch_frame)
-        
+
+        if len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
+            bad_data_counter +=1
+            print('Bad data at ', i)
+            continue
         total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames})
 
+    print('bad_data_counter = ', bad_data_counter)
     return total_info
 
 
@@ -120,6 +148,8 @@ def list2array(total_info):
 
 
 if __name__== '__main__':
-    t = parse_frame_dump('../data/test_ds2/models/1/1.xml')
-    print (t)
+    t = parse_frame_dump('data_l/train/models/Reisch/Reisch.xml')
+    # t = parse_frame_dump('data_error/train/models/201910204483_R1/201910204483_R1.xml')
+    t = list2array(t)
+    print(t.shape)
 

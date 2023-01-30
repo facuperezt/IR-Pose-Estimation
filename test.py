@@ -8,6 +8,9 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from test_preprocessing import sample_test_pc, slice_test
+from utils.compatibility import listdir
+
+from multiprocessing import Pool, cpu_count
 
 class PoseLookup():
     def __init__(self,
@@ -23,6 +26,11 @@ class PoseLookup():
         self.path_dataset = os.path.join(self.path_test, 'dataset')
         if not os.path.exists(self.path_dataset):
             os.makedirs(self.path_dataset)
+
+    def preprocessing_pool(self, args):
+        path_test_components, pcl_density, crop_size, num_points = args
+        for path in path_test_components:
+            self.preprocessing(path, pcl_density, crop_size, num_points)
 
     def preprocessing(self,
                       path_test_component,
@@ -97,6 +105,27 @@ class PoseLookup():
         
 if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
-    # te.preprocessing('./data/test/models/22-10-14_Trailer')
-    te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', \
-        test_one_component='./data/test/models/22-10-14_Trailer', batch_size=16)
+    if sys.version[0] == '3':
+        if sys.argv[1] == 'all':
+            path_test = './data/test/models/'
+            test_models = listdir(path_test)
+            test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
+            nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
+            k, m = divmod(len(test_models), nr_processes)                                                    # divide among processors
+            split_paths = list(test_models[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+            pcl_density, crop_size, num_points = 40, 400, 2048
+            repeated_args = [[pcl_density, crop_size, num_points]]*nr_processes
+            args = [[path, *args] for path, args in zip(split_paths, repeated_args)]
+            print (f'preprocessing test models... {nr_processes} workers ...', test_models)
+            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            with Pool(nr_processes) as p:
+                p.map(te.preprocessing_pool, [_args for _args in args])
+
+            print('processing finished')
+            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            # for test_model in test_models:
+            #     te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+        elif sys.argv[1] in listdir('./data/test/models'):
+            te.preprocessing(path_test_component='./data/test/models/' + sys.argv[1], pcl_density=40, crop_size=400, num_points=2048)
+    elif sys.version[0] == '2':
+        te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/Reisch', batch_size=16)

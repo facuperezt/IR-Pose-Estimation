@@ -129,8 +129,9 @@ def slice_one_parallel(args):
         try:
             slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, crop_size, num_points)
         except Exception as e:
+            print(e)
             with open('failed_slices.txt', 'a') as f:
-                f.write(e)
+                f.write(str(e))
                 f.write('\n')
     print('slicing done ... ...', files)
 
@@ -341,7 +342,7 @@ def move_files(path_data):
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
             # print (name)
-            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp'+name+'.pkl'))
+            copyfile(os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'), os.path.join(path_data, 'ss_lookup_table/dict_comp/'+name+'.pkl'))
             # os.system('cp %s %s' % (os.path.join(path_data, 'ss_lookup_table/dict/'+name+'.pkl'),
             #                         os.path.join(path_data, 'ss_lookup_table/dict_comp')))
 

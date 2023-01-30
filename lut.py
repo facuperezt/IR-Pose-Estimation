@@ -9,7 +9,7 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
-from obj_sample_and_autolabel import sample_and_label, sample_and_label_parallel
+from obj_sample_and_autolabel import sample_and_label, sample_and_label_alternative, sample_and_label_parallel
 import slice
 from utils.compatibility import listdir
 from multiprocessing import Pool, cpu_count
@@ -22,6 +22,8 @@ def parse_args():
     parser.add_argument('--skip_sampling', action='store_true', help='If flag is present sampling won\'t be executed')
     parser.add_argument('--skip_slicing', action='store_true', help='If flag is present slicing won\'t be executed')
     parser.add_argument('-s', '--skip_both', action='store_true', help='If flag is present sampling AND slicing will be skipped')
+    parser.add_argument('--fast_sampling', action='store_true', help='If flag is active, meshes with high vertex density are uniformly sampled into pointclouds (fast boi)')
+    parser.add_argument('--free_cores', type=int, default=2, help='Amount of NOT USED cores "used_cores = total_cores - free_cores"')
     parser.add_argument('--label', type=str, default='PDL', help='Type of splitting, default "PDL". To skip splitting use "skip_split"')
 
     return parser.parse_args()
@@ -53,8 +55,11 @@ class LookupTable():
                  crop_size:int=400,
                  num_points:int=2048,
                  profile=False,
+                 skip_splitting=False,
                  skip_sampling=False,
-                 skip_slicing=False):
+                 skip_slicing=False,
+                 fast_sampling=False,
+                 ):
         self.path_data = path_data
         self.path_train = os.path.join(self.path_data, 'train')
         self.path_models = os.path.join(self.path_train, 'models')
@@ -65,8 +70,10 @@ class LookupTable():
         self.crop_size = crop_size
         self.num_points = num_points
         self.profile = profile
+        self.skip_splitting = skip_splitting
         self.skip_sampling = skip_sampling
         self.skip_slicing = skip_slicing
+        self.fast_sampling = fast_sampling
         # Make sure the directory structure is correct
         components = listdir(self.path_models)
         for component in components:
@@ -94,22 +101,43 @@ class LookupTable():
                     old_name = os.path.splitext(file)[0]
                     if not old_name == component:
                         os.rename(os.path.join(self.path_models,component,file),os.path.join(self.path_models,component,component+'.mtl'))
-    def make(self):
+    def make(self, free_cores = 1):
         if self.label == 'PDL':
             self.path_classes = os.path.join(BASE, 'data', 'train', 'parts_classification')
             pdl = PDL(path_models=os.path.join(BASE, 'data', 'train', 'models'),
                 path_split=os.path.join(BASE, 'data', 'train', 'split'),
                 path_classes=self.path_classes)
             components = listdir(pdl.path_models)
-            for comp in components:
-                if comp.startswith('.'): continue
-                path_to_comp = os.path.join(pdl.path_models, comp)
-                files = listdir(path_to_comp)
-                for file in files:
-                    if os.path.splitext(file)[1] == '.obj':
-                        pdl.split(os.path.join(path_to_comp, file))
+
+
+            if self.profile:
+                for comp in components:
+                    if comp.startswith('.'): continue
+                    path_to_comp = os.path.join(pdl.path_models, comp)
+                    files = listdir(path_to_comp)
+                    for file in files:
+                        if os.path.splitext(file)[1] == '.obj':
+                            pdl.split(os.path.join(path_to_comp, file))
+
+            elif not self.profile and not self.skip_splitting:
+                components = [component for component in components if os.path.isdir(os.path.join(pdl.path_models, component))]    # remove non-folders
+                nr_processes = max(min(len(components), cpu_count() - free_cores), 1)
+                k, m = divmod(len(components), nr_processes)                                                    # divide among processors
+                split_components = list(components[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+                args = split_components
+                print (f'splitting... {nr_processes} workers ...', components)
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+                with Pool(nr_processes) as p:
+                    p.map(pdl.split_parallel, [_args for _args in args])
+
+                print('splitting finished')
+                print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            else:
+                raise ValueError('Weird param combination')
+
             pdl.write_all_parts()
             pdl.label()
+
         elif self.label == 'HFD':
             self.path_classes = self.hfd_path_classes
         elif self.label == 'skip_split':
@@ -151,15 +179,15 @@ class LookupTable():
                 if os.path.isdir(os.path.join(path_split, folder)) and self.label != 'debug':
                     print ('sampling... ...', folder)
                     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-                    sample_and_label(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
+                    sample_and_label_alternative(os.path.join(path_split, folder), path_pcd, path_xyz, label_dict, class_dict, self.pcl_density)
         elif not self.skip_sampling:
-            nr_processes = min(len(folders) - 1, cpu_count() - 1)
             folders = [folder for folder in folders if os.path.isdir(os.path.join(path_split, folder))]    # remove non-folders
+            nr_processes = max(min(len(folders), cpu_count() - free_cores), 1)
             k, m = divmod(len(folders), nr_processes)                                                    # divide among processors
             split_folders = list(folders[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
-            repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split]]*nr_processes
+            repeated_args = [[path_pcd, path_xyz, class_dict, label_dict, self.pcl_density, path_split, self.fast_sampling]]*nr_processes
             args = [[_folders, *_args] for _args, _folders in zip(repeated_args, split_folders)]
-            print ('sampling... ...', folders)
+            print (f'sampling... {nr_processes} workers ...', folders)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             with Pool(nr_processes) as p:
                 p.map(sample_and_label_parallel, [_args for _args in args])
@@ -192,15 +220,15 @@ class LookupTable():
                 name = file
                 slice.slice_one(pc_path, path_welding_zone, path_lookup_table, xml_path, name, self.crop_size, self.num_points)
         elif not self.skip_slicing:
-            nr_processes = min(len(files) - 1, cpu_count() - 1) # leave at least one cpu open
             files = [file for file in files if os.path.isdir(os.path.join(path_split, file))]    # remove non-folders
+            nr_processes = max(min(len(files), cpu_count() - free_cores), 1)
             k, m = divmod(len(files), nr_processes)                                                    # divide among processors
             split_files = list(files[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             repeated_args = [[path_welding_zone, path_lookup_table, self.crop_size, self.num_points, path_pcd, self.path_models]]*nr_processes
             args = [[_files, *_args] for _args, _files in zip(repeated_args, split_files)]
 
 
-            print ('slicing... ...', files)
+            print (f'slicing... {nr_processes} workers ...', files)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
             with Pool(nr_processes) as p:
@@ -227,27 +255,36 @@ class LookupTable():
 
 if __name__ == '__main__':
     args = parse_args()
-    lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048,\
+    lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes='./data/train/parts_classification', pcl_density=40, crop_size=400, num_points=2048,\
          profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both)
     if args.profile:
-        from foundation import points2pcd, load_pcd_data, fps
-        os.system('mv data data_tmp')
-        lp = LineProfiler()
-        lp.add_function(slice.WeldScene.__init__)
-        lp.add_function(slice.WeldScene.crop)
-        lp.add_function(slice.slice_one)
-        lp.add_function(sample_and_label)
-        lp.add_function(points2pcd)
-        lp.add_function(load_pcd_data)
-        lp.add_function(fps)
-        start = time.time()
-        lp_wrapper = lp(lut.make)
-        lp_wrapper()
-        print('\n'.join(['='*25]*2))
-        print(f'Total duration: {time.time() - start:.4f}s')
-        print('\n'.join(['='*25]*2))
-        lp.print_stats()
-        os.system('rm -r data')
-        os.system('mv data_tmp data')
+        from utils.foundation import points2pcd, load_pcd_data, fps
+        os.system('cp -r data data_tmp')
+        try:
+            lp = LineProfiler()
+            # lp.add_function(slice.WeldScene.__init__)
+            # lp.add_function(slice.WeldScene.crop)
+            # lp.add_function(slice.slice_one)
+            lp.add_function(sample_and_label_alternative)
+            # lp.add_function(points2pcd)
+            # lp.add_function(load_pcd_data)
+            # lp.add_function(slice.merge_lookup_table)
+            # lp.add_function(slice.get_feature_dict)
+            lp.add_function(slice.decrease_lib)
+            # lp.add_function(slice.move_files)
+            # lp.add_function(slice.norm_index)
+            lp.add_function(slice.similarity)
+            start = time.time()
+            lp_wrapper = lp(lut.make)
+            lp_wrapper()
+            print('\n'.join(['='*25]*2))
+            print(f'Total duration: {time.time() - start:.4f}s')
+            print('\n'.join(['='*25]*2))
+            lp.print_stats()
+        except Exception as e:
+            print(e)
+        finally:
+            os.system('rm -r data')
+            os.system('mv data_tmp data')
     else:
-        lut.make()
+        lut.make(args.free_cores)

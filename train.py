@@ -26,7 +26,8 @@ class TrainPointNet2():
     
     def make_dataset(self,
                      crop_size = 400,
-                     num_points = 2048):
+                     num_points = 2048,
+                     test_model_name = None):
         '''Make h5 format dataset
         
         Args:
@@ -42,7 +43,7 @@ class TrainPointNet2():
         # random scale and augmentation     
         processData(path_wzc, path_aug, crop_size, num_points)
         # split trainset and testset
-        wirteFiles(path_aug)
+        wirteFiles(path_aug, test_model_name=test_model_name)
         # wirte h5 format file
         write_data_label_hdf5(os.path.join(self.path_train,'train.txt'), self.path_dataset+'/seg_dataset_train_',2048)
         write_data_label_hdf5(os.path.join(self.path_train,'test.txt'), self.path_dataset+'/seg_dataset_test_',2048)
@@ -71,6 +72,12 @@ class TrainPointNet2():
         path_to_train = './single_spot_table/seg_train.py'
         os.system('python '+path_to_train+args)
 if __name__ == '__main__':
-    train = TrainPointNet2(path_data='./data')
-    train.train(log_dir='./data/seg_model')
+    tr = TrainPointNet2(path_data='./data')
+    if sys.version[0] == '3':
+        # make dataset
+        tr.make_dataset(crop_size=400, num_points=2048)
+    elif sys.version[0] == '2':
+        # training
+        tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
+
     
