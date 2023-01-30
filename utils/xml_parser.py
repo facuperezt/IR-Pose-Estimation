@@ -94,7 +94,7 @@ def parse_frame_dump(xml_file):
             continue
         total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames})
 
-    print(f'{bad_data_counter=}')
+    print('bad_data_counter = ', bad_data_counter)
     return total_info
 
 
