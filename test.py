@@ -102,8 +102,9 @@ if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if sys.version[0] == '3':
         if sys.argv[1] == 'all':
-            test_models = listdir('./data/test/models')
-            test_models = ['./data/test/models' + test_model for test_model in test_models if os.path.isdir(os.path.join('./data/test/models', test_model))]    # remove non-folders
+            path_test = './data/test/models/'
+            test_models = listdir(path_test)
+            test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
             nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
             k, m = divmod(len(test_models), nr_processes)                                                    # divide among processors
             split_components = list(test_models[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
