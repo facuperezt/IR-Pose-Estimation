@@ -310,50 +310,50 @@ def similarity_old(feature_dict1, feature_dict2, label_dict_r, use_geo_loss= Fal
                 loss_amount += np.sum((box1_all_points-box2_all_points)**2)/100000
     return 10*loss_norm + 10*loss_torch + loss_amount
 
-def similarity(feature_dict1, feature_dict2, label_dict_r):
-    '''Calculate the similarity error between two feature dictionaries
+# def similarity(feature_dict1, feature_dict2, label_dict_r):
+#     '''Calculate the similarity error between two feature dictionaries
     
-    Args:
-        feature_dict1 (dict)
-        feature_dict2 (dict)
-    Returns:
-        Total similarity error (float)
+#     Args:
+#         feature_dict1 (dict)
+#         feature_dict2 (dict)
+#     Returns:
+#         Total similarity error (float)
     
-    '''
-    loss_amount = 0
-    loss_geo = 0
-    loss_norm = 0
-    norm1 = feature_dict1['normals']
-    norm2 = feature_dict2['normals']
-    loss_norm = np.sum((norm1-norm2)**2)
-    torch1 = feature_dict1['torch']
-    torch2 = feature_dict2['torch']
-    loss_torch = int(torch1==torch2)
-    # loss_torch = (torch1-torch2)**2
-    for i in range(len(label_dict_r)):
-        # print feature_dict1[labeldict[i]]
-        # get the number of each class
-        if type(feature_dict1[label_dict_r[i]]) == type(None):
-            class_num_1_cur = 0
-        else:
-            class_num_1_cur = feature_dict1[label_dict_r[i]].shape[0]
+#     '''
+#     loss_amount = 0
+#     loss_geo = 0
+#     loss_norm = 0
+#     norm1 = feature_dict1['normals']
+#     norm2 = feature_dict2['normals']
+#     loss_norm = np.sum((norm1-norm2)**2)
+#     torch1 = feature_dict1['torch']
+#     torch2 = feature_dict2['torch']
+#     loss_torch = int(torch1==torch2)
+#     # loss_torch = (torch1-torch2)**2
+#     for i in range(len(label_dict_r)):
+#         # print feature_dict1[labeldict[i]]
+#         # get the number of each class
+#         if type(feature_dict1[label_dict_r[i]]) == type(None):
+#             class_num_1_cur = 0
+#         else:
+#             class_num_1_cur = feature_dict1[label_dict_r[i]].shape[0]
             
-        if type(feature_dict2[label_dict_r[i]]) == type(None):
-            class_num_2_cur = 0
-        else:
-            class_num_2_cur = feature_dict2[label_dict_r[i]].shape[0]
+#         if type(feature_dict2[label_dict_r[i]]) == type(None):
+#             class_num_2_cur = 0
+#         else:
+#             class_num_2_cur = feature_dict2[label_dict_r[i]].shape[0]
         
-        if class_num_1_cur == class_num_2_cur and class_num_1_cur != 0:
-            f1 = feature_dict1[label_dict_r[i]]
-            f1.sort(axis=0)
-            f2 = feature_dict2[label_dict_r[i]]
-            f2.sort(axis=0)
-            for _ in range(class_num_1_cur):
-                box1_all_points = f1[_] #shape(8, 3)
-                box2_all_points = f2[_] #shape(8, 3)
-                loss_geo += np.sum((box1_all_points-box2_all_points)**2)
-        loss_amount += abs(class_num_1_cur-class_num_2_cur)
-    return 10*loss_norm + 10*loss_torch + loss_amount + loss_geo/100000
+#         if class_num_1_cur == class_num_2_cur and class_num_1_cur != 0:
+#             f1 = feature_dict1[label_dict_r[i]]
+#             f1.sort(axis=0)
+#             f2 = feature_dict2[label_dict_r[i]]
+#             f2.sort(axis=0)
+#             for _ in range(class_num_1_cur):
+#                 box1_all_points = f1[_] #shape(8, 3)
+#                 box2_all_points = f2[_] #shape(8, 3)
+#                 loss_geo += np.sum((box1_all_points-box2_all_points)**2)
+#         loss_amount += abs(class_num_1_cur-class_num_2_cur)
+#     return 10*loss_norm + 10*loss_torch + loss_amount + loss_geo/100000
 
 def decrease_lib_dummy(path_data, path_train, path_wz, label_dict_r= None):
     path = os.path.join(path_data, 'ss_lookup_table/dict')
