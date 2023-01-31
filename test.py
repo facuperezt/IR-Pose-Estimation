@@ -116,7 +116,7 @@ if __name__ == '__main__':
             pcl_density, crop_size, num_points = 40, 400, 2048
             repeated_args = [[pcl_density, crop_size, num_points]]*nr_processes
             all_args = [args.insert(0, path) for path, args in zip(split_paths, repeated_args)]
-            print (f'preprocessing test models... {nr_processes} workers ...', test_models)
+            print ('preprocessing test models... ', nr_processes, ' workers ...', test_models)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             with Pool(nr_processes) as p:
                 p.map(te.preprocessing_pool, [_args for _args in all_args])
