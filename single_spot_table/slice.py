@@ -29,6 +29,8 @@ import copy
 import time
 from shutil import copyfile
 
+from numba import njit, float64, int64
+
 # # load label dictionary
 # f = open('../data/train/parts_classification/label_dict.pkl', 'rb')
 # lable_list = pickle.load(f)
@@ -237,6 +239,76 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
             # o3d.visualization.draw_geometries(elements)
             with open(os.path.join(path_data,  'ss_lookup_table/dict', os.path.splitext(file)[0]+'.pkl'), 'wb') as tf:
                 pickle.dump(feature_dict,tf,protocol=2)
+
+def similarity(feature_dict1, feature_dict2, label_dict_r):
+    norm1 = feature_dict1['normals']
+    torch1 = feature_dict1['torch']
+    array_classes1 = np.asarray([feature_dict1[key] for key in label_dict_r])
+    norm2 = feature_dict2['normals']
+    torch2 = feature_dict2['torch']
+    array_classes2 = np.asarray([feature_dict2[key] for key in label_dict_r])
+    return _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2)
+
+@njit(float64(float64[:], int64, float64[:, :, :], float64[:], int64, float64[:, :, :]))
+def _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2):
+    loss_norm = np.sum((norm1 - norm2) ** 2)
+    loss_torch = int(torch1==torch2)
+    geo_loss = 0
+    for ac1, ac2 in zip(array_classes1, array_classes2):
+        if ac1 is None: ac1 = np.array([])
+        if ac2 is None: ac2 = np.array([])
+        if ac1.shape == ac2.shape:
+            geo_loss += np.sum((ac1-ac2)**2)/100000
+        else:
+            geo_loss += np.abs(ac1.shape[0] - ac2.shape[0])
+
+    return 10*loss_norm + 10* loss_torch + geo_loss
+            
+    
+
+def similarity_old(feature_dict1, feature_dict2, label_dict_r, use_geo_loss= False):
+    '''Calculate the similarity error between two feature dictionaries
+    
+    Args:
+        feature_dict1 (dict)
+        feature_dict2 (dict)
+    Returns:
+        Total similarity error (float)
+    
+    '''
+    loss_amount = 0
+    loss_norm = 0
+    norm1 = feature_dict1['normals']
+    norm2 = feature_dict2['normals']
+    loss_norm = np.sum((norm1-norm2)**2)
+    torch1 = feature_dict1['torch']
+    torch2 = feature_dict2['torch']
+    loss_torch = int(torch1==torch2)
+    # loss_torch = (torch1-torch2)**2
+    for i in range(len(label_dict_r)):
+        # print feature_dict1[labeldict[i]]
+        # get the number of each class
+        if type(feature_dict1[label_dict_r[i]]) == type(None):
+            class_num_1_cur = 0
+        else:
+            class_num_1_cur = feature_dict1[label_dict_r[i]].shape[0]
+            
+        if type(feature_dict2[label_dict_r[i]]) == type(None):
+            class_num_2_cur = 0
+        else:
+            class_num_2_cur = feature_dict2[label_dict_r[i]].shape[0]
+        
+        loss_amount += abs(class_num_1_cur-class_num_2_cur)
+        if class_num_1_cur == class_num_2_cur and class_num_1_cur != 0 and use_geo_loss:
+            f1 = feature_dict1[label_dict_r[i]]
+            f1.sort(axis=0)
+            f2 = feature_dict2[label_dict_r[i]]
+            f2.sort(axis=0)
+            for _ in range(class_num_1_cur):
+                box1_all_points = f1[_] #shape(8, 3)
+                box2_all_points = f2[_] #shape(8, 3)
+                loss_amount += np.sum((box1_all_points-box2_all_points)**2)/100000
+    return 10*loss_norm + 10*loss_torch + loss_amount
 
 def similarity(feature_dict1, feature_dict2, label_dict_r):
     '''Calculate the similarity error between two feature dictionaries
