@@ -249,14 +249,16 @@ def similarity(feature_dict1, feature_dict2, label_dict_r):
     array_classes2 = np.asarray([feature_dict2[key] for key in label_dict_r])
     return _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2)
 
-@njit(float64(float64[:], int64, float64[:, :, :], float64[:], int64, float64[:, :, :]))
+@njit# (float64(float64[:], int64, float64[:, :, :], float64[:], int64, float64[:, :, :]))
 def _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2):
     loss_norm = np.sum((norm1 - norm2) ** 2)
     loss_torch = int(torch1==torch2)
     geo_loss = 0
-    for ac1, ac2 in zip(array_classes1, array_classes2):
-        if ac1 is None: ac1 = np.array([])
-        if ac2 is None: ac2 = np.array([])
+    for i in range(len(array_classes1)):
+        if array_classes1[i] is None: ac1 = np.array([])
+        else: ac1 = array_classes1[i]
+        if array_classes2[i] is None: ac2 = np.array([])
+        else: ac2 = array_classes2[i]
         if ac1.shape == ac2.shape:
             geo_loss += np.sum((ac1-ac2)**2)/100000
         else:
