@@ -87,8 +87,8 @@ class PoseLookup():
     def inference(self,
                   model_path,
                   test_input,
-                  test_one_component,
-                  batch_size):
+                  test_one_component = None,
+                  batch_size = 16):
         '''test a component
         
         Args:
@@ -97,8 +97,11 @@ class PoseLookup():
             test_one_component: if only one component will be tested, enter the path here [default: None]
             batch_size: keep the same batch size with training
         '''
-        args = " --model_path='"+model_path+"' --test_input="+test_input+" --test_one_component="+test_one_component\
-            +" --batch_size="+str(batch_size)
+        if test_one_component is not None:
+            args = " --model_path='"+model_path+"' --test_input="+test_input+" --test_one_component="+test_one_component\
+                +" --batch_size="+str(batch_size)
+        else:
+            args = " --model_path='"+model_path+"' --test_input="+test_input+" --batch_size="+str(batch_size)
         path_to_inference = './single_spot_table/seg_infer.py'
         os.system('python '+path_to_inference+args)
         
