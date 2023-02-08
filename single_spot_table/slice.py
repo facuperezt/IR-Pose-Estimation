@@ -243,10 +243,10 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
 def similarity(feature_dict1, feature_dict2, label_dict_r):
     norm1 = feature_dict1['normals']
     torch1 = feature_dict1['torch']
-    array_classes1 = np.asarray([feature_dict1[key] for key in label_dict_r])
+    array_classes1 = np.asarray([feature_dict1[key] for key in label_dict_r.values()])
     norm2 = feature_dict2['normals']
     torch2 = feature_dict2['torch']
-    array_classes2 = np.asarray([feature_dict2[key] for key in label_dict_r])
+    array_classes2 = np.asarray([feature_dict2[key] for key in label_dict_r.values()])
     return _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2)
 
 @njit# (float64(float64[:], int64, float64[:, :, :], float64[:], int64, float64[:, :, :]))
