@@ -268,7 +268,7 @@ class PFE():
         return features
         
     
-    def label(self, feats= None):
+    def label(self, feats= None, parallel = True):
         '''Automatic labeling
         Cluster analysis, each cluster is a class
         Args:
@@ -313,20 +313,32 @@ class PFE():
         features_norma= minMax.fit_transform(new_features)
         
         # select the suitable parameters
+        gammas = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         gamma_finl = 0
         n_finl = 0
         score_finl = 0
-        for _, gamma in enumerate((0.01, 0.1, 0.5, 1)):
-            for n in range(5, 12):
-                y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
-                score = calinski_harabasz_score(features_norma, y_pred)
+        for n in range(5, 14):
+            print('\n\nFor nr_clusters = ', n, '\n')
+            if not parallel:
+                for _, gamma in enumerate(gammas):
+                    y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
+                    score = calinski_harabasz_score(features_norma, y_pred)
+                    if score > score_finl:
+                        score_finl = score
+                        gamma_finl = gamma
+                        n_finl = n
+                        y_pred_finl = y_pred
+                        # ds_finl = ds
+                        # dn_finl = dn
+                    # print("Calinski-Harabasz Score with gamma=", gamma, "n_clusters=", n, "score:", score)
+            else:
+                gammas = np.linspace(0,1, max(11, cpu_count()))
+                score, gamma, y_pred = self.parallel_spectral_clustering(features_norma, n, gammas)
                 if score > score_finl:
                     score_finl = score
                     gamma_finl = gamma
                     n_finl = n
-                    # ds_finl = ds
-                    # dn_finl = dn
-                # print("Calinski-Harabasz Score with gamma=", gamma, "n_clusters=", n, "score:", score)
+                    y_pred_finl = y_pred
         print ('best score: ', score_finl, 'best gamma: ', gamma_finl, 'best n_clusters: ', n_finl)
         # print('ds: ', ds, 'dn: ', dn)
         # =========================================================================
@@ -335,8 +347,9 @@ class PFE():
         input("(Press Enter)")
         n_clusters = n_finl
         gamma = gamma_finl
-        clusterer = SpectralClustering(n_clusters=n_clusters, gamma=gamma)
-        y_pred = clusterer.fit_predict(features_norma)
+        # clusterer = SpectralClustering(n_clusters=n_clusters, gamma=gamma)
+        # y_pred = clusterer.fit_predict(features_norma)
+        y_pred = y_pred_finl
         # print("Calinski-Harabasz Score", calinski_harabasz_score(features_norma, y_pred))
         # print(y_pred.shape)
         for i in range(n_clusters):
@@ -359,7 +372,42 @@ class PFE():
 
         # =========================================================================
     
-    def relabel(self, n):
+    def _spectral_clustering(self, args):
+        features_norma, n, gammas = args
+        gamma_finl = 0
+        score_finl = 0
+        for gamma in gammas:
+            y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
+            score = calinski_harabasz_score(features_norma, y_pred)
+            # print('gamma: ', gamma, ' - score: ',  score)
+            if score > score_finl:
+                score_finl = score
+                gamma_finl = gamma
+                y_pred_finl = y_pred
+        return (score_finl, gamma_finl, y_pred_finl)
+
+
+    def parallel_spectral_clustering(self, feature_norma, n, gammas, free_cores = 2):
+        nr_processes = max(min(len(gammas), cpu_count() - free_cores), 1)
+        k, m = divmod(len(gammas), nr_processes)                                                    # divide among processors
+        split_gammas = list(gammas[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+        repeated_args = [[feature_norma, n]]*nr_processes
+        args = [[*_args, _gammas] for _args, _gammas in zip(repeated_args, split_gammas)]
+        
+        # print (f'clustering ... {nr_processes} workers ...', gammas)
+        # print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        with Pool(nr_processes) as p:
+            q = p.map(self._spectral_clustering, [_args for _args in args])
+
+        # print('clustering finished')
+        # print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+
+        score, gamma, y_pred = sorted(q, key = lambda x: x[0])[-1] 
+
+        return score, gamma, y_pred
+
+    def relabel(self, n, parallelize = True):
         '''Redo the automatic labeling
         Cluster analysis, each cluster is a class
         Args:
@@ -392,25 +440,31 @@ class PFE():
         # normalization
         minMax = MinMaxScaler((0,1))
         features_norma= minMax.fit_transform(new_features)
-        
-        # select the suitable parameters
-        gamma_finl = 0
-        score_finl = 0
-        for _, gamma in enumerate((0.001, 0.005, 0.1, 0.5, 1)):
-            y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
-            score = calinski_harabasz_score(features_norma, y_pred)
-            if score > score_finl:
-                score_finl = score
-                gamma_finl = gamma
-        print ('best score: ', score_finl, 'best gamma: ', gamma_finl)
-        # print('ds: ', ds, 'dn: ', dn)
-        # =========================================================================
+        gammas = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        if not parallelize:
+            # select the suitable parameters
+            gamma_finl = 0
+            score_finl = 0
+            for _, gamma in enumerate(gammas):
+                y_pred = SpectralClustering(n_clusters=n, gamma=gamma).fit_predict(features_norma)
+                score = calinski_harabasz_score(features_norma, y_pred)
+                if score > score_finl:
+                    score_finl = score
+                    gamma_finl = gamma
+            # print('ds: ', ds, 'dn: ', dn)
+            # =========================================================================
 
-        input("(Press Enter)")
-        n_clusters = n
-        gamma = gamma_finl
-        clusterer = SpectralClustering(n_clusters=n_clusters, gamma=gamma)
-        y_pred = clusterer.fit_predict(features_norma)
+            input("(Press Enter)")
+            n_clusters = n
+            gamma = gamma_finl
+            score = score_finl
+            clusterer = SpectralClustering(n_clusters=n_clusters, gamma=gamma)
+            y_pred = clusterer.fit_predict(features_norma)
+        else:
+            score, gamma, y_pred = self.parallel_spectral_clustering(features_norma, n, gammas)
+            n_clusters = n
+
+        print ('best score: ', score, 'best gamma: ', gamma)
         # print("Calinski-Harabasz Score", calinski_harabasz_score(features_norma, y_pred))
         # print(y_pred.shape)
         for i in range(n_clusters):

@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument('--skip_slicing', action='store_true', help='If flag is present slicing won\'t be executed')
     parser.add_argument('-s', '--skip_both', action='store_true', help='If flag is present sampling AND slicing will be skipped')
     parser.add_argument('--fast_sampling', action='store_true', help='If flag is active, meshes with high vertex density are uniformly sampled into pointclouds (fast boi)')
-    parser.add_argument('--dont_decrease_lib', action='store_false', help='If active, lib is NOT getting decreased.')
+    parser.add_argument('--decrease_lib', action='store_true', help='If active, lib is NOT getting decreased.')
     parser.add_argument('--free_cores', type=int, default=2, help='Amount of NOT USED cores "used_cores = total_cores - free_cores"')
     parser.add_argument('--label', type=str, default='PDL', help='Type of splitting, default "PDL". To skip splitting use "skip_split"')
 
@@ -263,7 +263,7 @@ class LookupTable():
 if __name__ == '__main__':
     args = parse_args()
     lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes='./data/train/parts_classification', pcl_density=40, crop_size=400, num_points=2048,\
-         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both, fast_sampling=args.fast_sampling, decrease_lib= args.dont_decrease_lib)
+         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both, fast_sampling=args.fast_sampling, decrease_lib= args.decrease_lib)
     if args.profile:
         from utils.foundation import points2pcd, load_pcd_data, fps
         os.system('cp -r data data_tmp')

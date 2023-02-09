@@ -11,6 +11,7 @@ from test_preprocessing import sample_test_pc, slice_test
 from utils.compatibility import listdir
 
 from multiprocessing import Pool, cpu_count
+from argparse import ArgumentParser
 
 class PoseLookup():
     def __init__(self,
@@ -107,16 +108,30 @@ class PoseLookup():
         
         
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--preprocess', action='store_true', help='Run script preprocessing (Requires python 3.x)')
+    parser.add_argument('-i', '--inference', action='store_true', help='Run inference script (Requires python 2.x)')
+    parser.add_argument('--test_models', nargs='*', type=str, help='Pass name of models to be preprocessed for inference. If no name is passed all models in --test_folder will be preprocessed.')
+    parser.add_argument('--pcl_density', type=int, default= 40, help='Pointcloud Density (Must be the same as in training)')
+    parser.add_argument('--crop_size', type=int, default= 400, help='Cropped Slice Size (Must be the same as in training)')
+    parser.add_argument('--num_points', type=int, default=2048, help='Number of points per PCL (Must be the same as in training)')
+    parser.add_argument('--batch_size', type= int, default= 16, help='Batch size of network (Must be the same as in training)')
+    args = parser.parse_args()
+    assert args.preprocess ^ args.inference, 'Script has to be used with -p OR -i flag'
+
     te = PoseLookup(path_data='./data')
-    if sys.version[0] == '3':
-        if sys.argv[1] == 'all':
+    if args.preprocess:
+        assert sys.version[0] == '3', 'Python 3.x is required for preprocessing (-p)'
+        if len(args.test_models) != 1:
             path_test = './data/test/models/'
             test_models = listdir(path_test)
+            if len(args.test_models) > 0:
+                test_models = [tm for tm in test_models if tm in args.test_models]
             test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
             nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
             k, m = divmod(len(test_models), nr_processes)                                                    # divide among processors
             split_paths = list(test_models[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
-            pcl_density, crop_size, num_points = 40, 400, 2048
+            pcl_density, crop_size, num_points = args.pcl_density, args.crop_size, args.num_points
             repeated_args = [[pcl_density, crop_size, num_points]]*nr_processes
             all_args = [args.insert(0, path) for path, args in zip(split_paths, repeated_args)]
             print ('preprocessing test models... ', nr_processes, ' workers ...', test_models)
@@ -128,7 +143,8 @@ if __name__ == '__main__':
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             # for test_model in test_models:
             #     te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
-        elif sys.argv[1] in listdir('./data/test/models'):
-            te.preprocessing(path_test_component='./data/test/models/' + sys.argv[1], pcl_density=40, crop_size=400, num_points=2048)
-    elif sys.version[0] == '2':
-        te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', batch_size=16)
+        elif len(args.test_models) == 1 in listdir('./data/test/models'):
+            te.preprocessing(path_test_component='./data/test/models/' + args.test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
+    elif args.inference:
+        assert sys.version[0] == '2', 'Python 2.x is required for preprocessing (-i)'
+        te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', batch_size=args.batch_size)
