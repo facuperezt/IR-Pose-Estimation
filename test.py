@@ -123,10 +123,10 @@ if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if args.preprocess:
         assert sys.version[0] == '3', 'Python 3.x is required for preprocessing (-p)'
-        if len(args.test_models) != 1:
+        if args.test_models is None or len(args.test_models) != 1:
             path_test = './data/test/models/'
             test_models = listdir(path_test)
-            if len(args.test_models) > 0:
+            if args.test_models is not None and len(args.test_models) > 0:
                 test_models = [tm for tm in test_models if tm in args.test_models]
             test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
             nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
