@@ -119,7 +119,6 @@ python test.py -p [-ARGUMENTS]
 The models need to be in './data/test/models/'
 
 ### Testing Step 2. Inference
-
 In Python2 environment
 ```bash
 python test.py -i [-ARGUMENTS]

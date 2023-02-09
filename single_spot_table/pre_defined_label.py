@@ -5,6 +5,7 @@
 import os
 import sys
 import pickle
+from utils.compatibility import listdir
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
@@ -31,7 +32,7 @@ class PDL():
         self.path_split = path_split
         self.path_classes = path_classes
         # save class list
-        # components = os.listdir(self.path_models)
+        # components = listdir(self.path_models)
         # class_dict = {}
         # label_count = 0
         # for component in components:
@@ -47,6 +48,15 @@ class PDL():
         # with open(os.path.join(self.path_classes, 'class_dict.pkl'), 'wb') as tf:
         #     pickle.dump(class_dict,tf,protocol=2)
             
+    def split_parallel(self, args):
+        components = args
+        for comp in components:
+            path_to_comp = os.path.join(self.path_models, comp)
+            files = listdir(path_to_comp)
+            for file in files:
+                if os.path.splitext(file)[1] == '.obj':
+                    self.split(os.path.join(path_to_comp, file))
+
     def split(self, path_file:str):
         '''Take the assembly apart
         Create a folder for each mesh file, which stores the mesh model of the disassembled parts
@@ -103,10 +113,10 @@ class PDL():
         Returns:
             None
         '''
-        all_components = os.listdir(self.path_split)
+        all_components = listdir(self.path_split)
         with open(os.path.join(self.path_split, 'all_parts.txt'), 'w') as f:
             for component in all_components:
-                files = os.listdir(os.path.join(self.path_split, component))
+                files = listdir(os.path.join(self.path_split, component))
                 for file in files:
                     if os.path.splitext(file)[1] == '.obj':                
                         content = open(os.path.join(self.path_split, component, file), 'r')
@@ -128,8 +138,6 @@ class PDL():
             class_dir = os.path.join(self.path_classes, class_dict[key])
             if not os.path.exists(class_dir):
                 os.makedirs(class_dir)
-            print(key)
-            print(class_dir)
             os.system('cp %s %s'%(key, class_dir))
 
 
@@ -137,10 +145,10 @@ if __name__ == '__main__':
     pfe = PDL(path_models=os.path.join(ROOT, 'data', 'train', 'models'),
               path_split=os.path.join(ROOT, 'data', 'train', 'split'),
               path_classes=os.path.join(ROOT, 'data', 'train', 'parts_classification'))
-    components = os.listdir(pfe.path_models)
+    components = listdir(pfe.path_models)
     for comp in components:
         path_to_comp = os.path.join(pfe.path_models, comp)
-        files = os.listdir(path_to_comp)
+        files = listdir(path_to_comp)
         for file in files:
             if os.path.splitext(file)[1] == '.obj':
                 pfe.split(os.path.join(path_to_comp, file))
