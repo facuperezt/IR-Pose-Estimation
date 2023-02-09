@@ -13,7 +13,6 @@ from obj_sample_and_autolabel import sample_and_label, sample_and_label_alternat
 import slice
 from utils.compatibility import listdir
 from multiprocessing import Pool, cpu_count
-from line_profiler import LineProfiler
 import argparse
 
 def parse_args():
@@ -265,5 +264,5 @@ class LookupTable():
 if __name__ == '__main__':
     args = parse_args()
     lut = LookupTable(path_data='./data', label=args.label, hfd_path_classes='./data/train/parts_classification', pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points,\
-         profile=args.profile, skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both, fast_sampling=args.fast_sampling, decrease_lib= args.decrease_lib)
+        skip_sampling= args.skip_sampling or args.skip_both, skip_slicing= args.skip_slicing or args.skip_both, fast_sampling=args.fast_sampling, decrease_lib= args.decrease_lib)
     lut.make(args.free_cores)

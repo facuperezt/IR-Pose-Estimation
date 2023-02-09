@@ -83,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epoch', type=int, default=100, help='Maximum amount of Epochs for training')
     parser.add_argument('--batch_size', type=int, default= 16, help='Batch Size for training')
     parser.add_argument('--learning_rate', type=float, default= 0.001, help='Learning Rate for training')
+    parser.add_argument('--gpu', type= int, default=0, choices=[0,1], help='Which GPU to use.')
     args = parser.parse_args()
     assert args.preprocess ^ args.train, 'Script must be called with -p OR -t flag.'
 
@@ -94,6 +95,6 @@ if __name__ == '__main__':
     elif args.train:
         assert sys.version[0] == '2', 'Training requires Python 2.x (-t)'
         # training
-        tr.train(log_dir='./data/seg_model', gpu=0, num_point=args.num_points, max_epoch=args.max_epoch, batch_size=args.batch_size, learning_rate=args.learning_rate)
+        tr.train(log_dir='./data/seg_model', gpu=args.gpu, num_point=args.num_points, max_epoch=args.max_epoch, batch_size=args.batch_size, learning_rate=args.learning_rate)
 
     

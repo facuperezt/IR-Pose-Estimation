@@ -116,6 +116,7 @@ if __name__ == '__main__':
     parser.add_argument('--crop_size', type=int, default= 400, help='Cropped Slice Size (Must be the same as in training)')
     parser.add_argument('--num_points', type=int, default=2048, help='Number of points per PCL (Must be the same as in training)')
     parser.add_argument('--batch_size', type= int, default= 16, help='Batch size of network (Must be the same as in training)')
+    parser.add_argument('--model_path', type=str, default= './data/seg_model/model1.ckpt', help='Path of model to run inference with')
     args = parser.parse_args()
     assert args.preprocess ^ args.inference, 'Script has to be used with -p OR -i flag'
 
@@ -147,4 +148,4 @@ if __name__ == '__main__':
             te.preprocessing(path_test_component='./data/test/models/' + args.test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
     elif args.inference:
         assert sys.version[0] == '2', 'Python 2.x is required for preprocessing (-i)'
-        te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', batch_size=args.batch_size)
+        te.inference(model_path=args.model_path, test_input='./data/test/welding_zone_test', batch_size=args.batch_size)
