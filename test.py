@@ -29,7 +29,7 @@ class PoseLookup():
             os.makedirs(self.path_dataset)
 
     def preprocessing_pool(self, args):
-        path_test_components, pcl_density, crop_size, num_points = args
+        path_test_components, (pcl_density, crop_size, num_points) = args
         for path in path_test_components:
             self.preprocessing(path, pcl_density, crop_size, num_points)
 
@@ -123,18 +123,20 @@ if __name__ == '__main__':
     te = PoseLookup(path_data='./data')
     if args.preprocess:
         assert sys.version[0] == '3', 'Python 3.x is required for preprocessing (-p)'
-        if args.test_models is None or len(args.test_models) != 1:
+        test_models = [] if args.test_models is None else args.test_models.copy()
+        if len(test_models) != 1:
             path_test = './data/test/models/'
             test_models = listdir(path_test)
-            if args.test_models is not None and len(args.test_models) > 0:
-                test_models = [tm for tm in test_models if tm in args.test_models]
+            if len(test_models) > 0:
+                test_models = [tm for tm in test_models if tm in test_models]
+            print(test_models)
             test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
             nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
             k, m = divmod(len(test_models), nr_processes)                                                    # divide among processors
             split_paths = list(test_models[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
             pcl_density, crop_size, num_points = args.pcl_density, args.crop_size, args.num_points
             repeated_args = [[pcl_density, crop_size, num_points]]*nr_processes
-            all_args = [args.insert(0, path) for path, args in zip(split_paths, repeated_args)]
+            all_args = [[path, _args] for path, _args in zip(split_paths, repeated_args)]
             print ('preprocessing test models... ', nr_processes, ' workers ...', test_models)
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             with Pool(nr_processes) as p:
@@ -144,8 +146,8 @@ if __name__ == '__main__':
             print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
             # for test_model in test_models:
             #     te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
-        elif len(args.test_models) == 1 in listdir('./data/test/models'):
-            te.preprocessing(path_test_component='./data/test/models/' + args.test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
+        elif len(test_models) == 1 in listdir('./data/test/models'):
+            te.preprocessing(path_test_component='./data/test/models/' + test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
     elif args.inference:
         assert sys.version[0] == '2', 'Python 2.x is required for preprocessing (-i)'
         te.inference(model_path=args.model_path, test_input='./data/test/welding_zone_test', batch_size=args.batch_size)
