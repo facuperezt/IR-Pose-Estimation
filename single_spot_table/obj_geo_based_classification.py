@@ -488,10 +488,11 @@ class PFE():
         # show_obj('../data/train/label_temp_folder/special_cases')
 
 def main(pfe):
-    # 1. take the assembly apart
-    print ('Ensure that the components to be split are placed in the required directory format')
-    input('(Press Enter)')
-    print ('Step1. Split the assembly')
+    if pfe.n_clusters is None:
+        # 1. take the assembly apart
+        print ('Ensure that the components to be split are placed in the required directory format')
+        input('(Press Enter)')
+        print ('Step1. Split the assembly')
     components = listdir(pfe.path_models)
     if not pfe.parallel:
         for comp in components:
