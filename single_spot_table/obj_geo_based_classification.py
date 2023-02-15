@@ -345,7 +345,7 @@ class PFE():
         print ('best score: ', score_finl, 'best gamma: ', gamma_finl, 'best n_clusters: ', n_finl)
         # print('ds: ', ds, 'dn: ', dn)
         # =========================================================================
-        if n_clusters is None:
+        if self.n_clusters is None:
             print ('Next you will see the classification results, the category names on the window are from 0 to n.')
             print ('If you want to adjust them later, please remember the category corresponding to each visualization.')
             input("(Press Enter)")
