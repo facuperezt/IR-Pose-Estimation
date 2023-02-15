@@ -106,7 +106,7 @@ def make_document(frames, parts_path, model_name):
     f.write(doc.toprettyxml(indent = '  '))
     f.close()
 
-def parse_args() -> Dict[str,str]:
+def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/', required= False, help='Path to the original models (i.e. ./data/test/models/)')
     parser.add_argument('--infered_points_folder_path', type=str, default='./data_last/test/results/', required= False, help='Path to results (i.e. ./data/test/results/)')
