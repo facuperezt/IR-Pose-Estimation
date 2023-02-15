@@ -13,6 +13,8 @@ import sys
 import scipy.linalg as linalg
 import math
 from compatibility import listdir
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "single_spot_table"
 from ..update_xml import main as update_xml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -346,8 +348,6 @@ def infer_all_sep(path_test_component=None):
 
 
 if __name__=='__main__':
-    if __package__ is None:
-        __package__ = "single_spot_table"
     infer_all_sep(TEST_COMP)
     path = ROOT+'/data/test/results'
     folders = listdir(path)
