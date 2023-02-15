@@ -107,19 +107,17 @@ def make_document(frames, parts_path, model_name):
 
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/', required= False, help='Path to the original models (i.e. ./data/test/models/)')
+    parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/Reisch', required= False, help='Path to the original models (i.e. ./data/test/models/)')
     parser.add_argument('--infered_points_folder_path', type=str, default='./data_last/test/results/', required= False, help='Path to results (i.e. ./data/test/results/)')
 
     args = parser.parse_args()
 
-    assert os.path.isdir(os.path.join(args.original_xml_path, args.model_name)), 'Model not found.'
-    assert os.path.isdir(os.path.join(args.infered_points_folder_path, args.model_name)), 'Infered files folder not found.'
-    assert os.path.isfile(os.path.join(args.original_xml_path, args.model_name, args.model_name+'.xml')), 'Original .xml file not found.'
+    assert os.path.isfile(os.path.join(args.original_xml_path)), 'Original .xml file not found.'
+    assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
 
     ret = {
         'file_path' : os.path.join(args.original_xml_path, args.model_name, args.model_name+'.xml'),
         'parts_path' : os.path.join(args.infered_points_folder_path, args.model_name),
-        'model_name' : args.model_name,
     }
 
     return ret
