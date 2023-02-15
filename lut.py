@@ -6,6 +6,11 @@ import time
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
 
+# Force python XML parser not faster C accelerators
+# because we can't hook the C implementation
+# used to hack into the XML parser library and extract line numbers :)
+sys.modules['_elementtree'] = None
+
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from pre_defined_label import PDL
