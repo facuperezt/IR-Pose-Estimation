@@ -5,7 +5,7 @@
 
 ### Models ###
 models/
-Dataset/
+dataset_store/
 *.zip
 
 ### Django ###
