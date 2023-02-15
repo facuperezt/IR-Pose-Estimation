@@ -13,6 +13,7 @@ import sys
 import scipy.linalg as linalg
 import math
 from compatibility import listdir
+from ..update_xml import main as update_xml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
@@ -348,7 +349,7 @@ if __name__=='__main__':
     infer_all_sep(TEST_COMP)
     path = ROOT+'/data/test/results'
     folders = listdir(path)
-    for folder in folders:
+    for folder in folders: # This loop might not be needed anymore.
         files = listdir(os.path.join(path, folder))
         xml_list = []
         for file in files:
@@ -364,5 +365,11 @@ if __name__=='__main__':
                     f.write(line)
             f.write('</frame-dump>')
     
+    if not TEST_COMP == None:
+        folders = [os.path.split(TEST_COMP)[-1]]
+    else:
+        folders = listdir(INPUT_PATH)
+    for folder in folders:
+        update_xml(original_xml_path= os.path.join(INPUT_PATH, '../models', folder+'.xml'),parts_path=path)
 
        
