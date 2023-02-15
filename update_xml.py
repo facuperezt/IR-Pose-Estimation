@@ -112,8 +112,8 @@ def parse_args():
 
     args = parser.parse_args()
 
-    assert os.path.isfile(os.path.join(args.original_xml_path)), 'Original .xml file not found.'
-    assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
+    # assert os.path.isfile(os.path.join(args.original_xml_path)), 'Original .xml file not found.'
+    # assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
 
     ret = {
         'file_path' : os.path.join(args.original_xml_path, args.model_name, args.model_name+'.xml'),
