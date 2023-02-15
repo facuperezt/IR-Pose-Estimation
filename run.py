@@ -9,7 +9,7 @@ if __name__ == '__main__':
     BEFORE RUNNING THE SCRIPT:
         1. run 'python model_splitter.py 2 -t 1 10101' to load a small dataset
         2. run 'python single_spot_table/obj_geo_based_classification.py' and follow the instructions
-        
+
     """
     # Make Lookup Table
     os.system('python lut.py --label=HFD --fast_sampling')
@@ -20,6 +20,6 @@ if __name__ == '__main__':
     # Activate Python2 environment
     os.system('conda activate py27')
     # Train the model
-    os.system('python train.py -t')
+    os.system('python train.py -t --max_epoch 5')
     # Run inference
     os.system('python test.py -i')

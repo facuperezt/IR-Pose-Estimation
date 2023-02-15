@@ -21,9 +21,9 @@ from sklearn.metrics import calinski_harabasz_score
 import pickle
 import matplotlib.pyplot as plt
 from compatibility import listdir
-from line_profiler import LineProfiler
 import time
 from multiprocessing import Pool, cpu_count
+import argparse
 
 CURRENT_PATH = os.path.abspath(__file__)
 BASE = os.path.dirname(CURRENT_PATH) 
@@ -49,12 +49,14 @@ class PFE():
                  path_split:str,
                  path_label_temp: str,
                  path_classes: str,
-                 parallel: bool= True):
+                 parallel: bool= True,
+                 n_clusters= None):
         self.path_models = path_models
         self.path_split = path_split
         self.path_label_temp = path_label_temp
         self.path_classes = path_classes
         self.parallel = parallel
+        self.n_clusters = n_clusters
 
     def split_parallel(self, components):
         for comp in components:
@@ -317,7 +319,8 @@ class PFE():
         gamma_finl = 0
         n_finl = 0
         score_finl = 0
-        for n in range(5, 14):
+        n_clusters_range = range(5,14) if self.n_clusters is None else [self.n_clusters]
+        for n in n_clusters_range:
             print('\n\nFor nr_clusters = ', n, '\n')
             if not parallel:
                 for _, gamma in enumerate(gammas):
@@ -342,9 +345,10 @@ class PFE():
         print ('best score: ', score_finl, 'best gamma: ', gamma_finl, 'best n_clusters: ', n_finl)
         # print('ds: ', ds, 'dn: ', dn)
         # =========================================================================
-        print ('Next you will see the classification results, the category names on the window are from 0 to n.')
-        print ('If you want to adjust them later, please remember the category corresponding to each visualization.')
-        input("(Press Enter)")
+        if n_clusters is None:
+            print ('Next you will see the classification results, the category names on the window are from 0 to n.')
+            print ('If you want to adjust them later, please remember the category corresponding to each visualization.')
+            input("(Press Enter)")
         n_clusters = n_finl
         gamma = gamma_finl
         # clusterer = SpectralClustering(n_clusters=n_clusters, gamma=gamma)
@@ -516,26 +520,29 @@ def main(pfe):
     print ('The following parameters are automatically selected by the algorithm, please adjust later if you are not satisfied')
     pfe.label()
     # 3. relabel
-    print ('For the classification results, it is recommended that the initial classification be more detailed, and the subsequent operations can combine different categories')
-    print ('In other words, if some similar parts are classified in different categories, then there is no need to reclassify them and they can be merged in subsequent operations.')
-    input('(Press Enter)')
-    satisfaction = True
-    satisfaction = True if input('Are you satisfied with this classification?(y/n)\n')=='y' else False
-    while not satisfaction:
-        os.system('rm -rf %s'%pfe.path_label_temp)
-        n = int(input('How many categories do you want to divide into?\n'))
-        pfe.relabel(n)
-        satisfaction = True if input('Are you satisfied with this classification?(y/n)\n')=='y' else False 
-    # 4. merge
-    print ('Current categories are')
-    f = open(os.path.join(pfe.path_label_temp,'labels_dict.pkl'), 'rb')
-    labeldict = pickle.load(f)
-    current_classes = []
-    for v in labeldict.values():
-        if v not in current_classes:
-            current_classes.append(v)
-    print (current_classes)
-    is_merge = input ('Do you want to merge some classes?(y/n)\n')
+    if pfe.n_clusters is None:
+        print ('For the classification results, it is recommended that the initial classification be more detailed, and the subsequent operations can combine different categories')
+        print ('In other words, if some similar parts are classified in different categories, then there is no need to reclassify them and they can be merged in subsequent operations.')
+        input('(Press Enter)')
+        satisfaction = True
+        satisfaction = True if input('Are you satisfied with this classification?(y/n)\n')=='y' else False
+        while not satisfaction:
+            os.system('rm -rf %s'%pfe.path_label_temp)
+            n = int(input('How many categories do you want to divide into?\n'))
+            pfe.relabel(n)
+            satisfaction = True if input('Are you satisfied with this classification?(y/n)\n')=='y' else False 
+        # 4. merge
+        print ('Current categories are')
+        f = open(os.path.join(pfe.path_label_temp,'labels_dict.pkl'), 'rb')
+        labeldict = pickle.load(f)
+        current_classes = []
+        for v in labeldict.values():
+            if v not in current_classes:
+                current_classes.append(v)
+        print (current_classes)
+        is_merge = input ('Do you want to merge some classes?(y/n)\n')
+    else:
+        is_merge = 'n'
     if is_merge == 'y':
         used = []
         new_classes = []
@@ -584,23 +591,15 @@ def main(pfe):
     
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] == 'profile':
-        parallel = False
-    else:
-        parallel = True
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--n_clusters', type=int, required=False, default=None, help='pre-defined the amount of clusters, skips all user inputs.')
+    n_clusters = parser.parse_args().n_clusters
     pfe = PFE(path_models=os.path.join(ROOT, 'data', 'train', 'models'),
               path_split=os.path.join(ROOT, 'data', 'train', 'split'),
               path_label_temp=os.path.join(ROOT, 'data', 'train', 'label_temp_folder'),
               path_classes=os.path.join(ROOT, 'data', 'train', 'parts_classification'),
-              parallel= parallel)
-    if not parallel:
-        lp = LineProfiler()
-        lp.add_function(pfe.extract_feature_from_mesh)
-        lp.add_function(pfe.split)
-        lp.add_function(pfe.label)
-        lp_wrapper = lp(main)
-        lp_wrapper(pfe)
-        lp.print_stats()
-    else:
-        main(pfe)
+              parallel=True,
+              n_clusters=n_clusters,
+            )
+    main(pfe)
     
