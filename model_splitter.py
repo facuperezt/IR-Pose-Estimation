@@ -55,9 +55,9 @@ if __name__ == '__main__':
     if os.path.exists('./data'):
         os.system('mv data data_last')
     if args.dataset in ['1', '2']:
-        split_models(f'Dataset/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)
+        split_models(f'Datasets/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)
     elif args.dataset == 'trailer':
-        split_models(f'Dataset/ds_Trailer', 'data/train/models', 'data/test/models', args.test_models)
+        split_models(f'Datasets/ds_Trailer', 'data/train/models', 'data/test/models', args.test_models)
     else:
         split_models(args.dataset, 'data/train/models', 'data/test/models', args.test_models)
 
