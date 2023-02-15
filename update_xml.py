@@ -140,7 +140,7 @@ def main(original_xml_path, parts_path):
     param: original_xml_path: path to the ground truth xml
     param: parts_path: path to the results folder, where the sub-XMLs are located
     """
-    model_name = os.path.splitext(original_xml_path)[0]
+    model_name = os.path.splitext(original_xml_path)[0].split('/')[-1]
     original_xml = list2array(parse_frame_dump(original_xml_path))
     sorted_xmls = sort_xmls(parts_path, model_name)
     flag = True
