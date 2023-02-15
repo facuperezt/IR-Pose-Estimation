@@ -515,10 +515,11 @@ def main(pfe):
         print('splitting finished')
         print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
     pfe.write_all_parts()
-    input('(Press Enter)')
-    # 2. label these parts
-    print ('Step2. Label the split parts')
-    print ('The following parameters are automatically selected by the algorithm, please adjust later if you are not satisfied')
+    if pfe.n_clusters is None:
+        input('(Press Enter)')
+        # 2. label these parts
+        print ('Step2. Label the split parts')
+        print ('The following parameters are automatically selected by the algorithm, please adjust later if you are not satisfied')
     pfe.label()
     # 3. relabel
     if pfe.n_clusters is None:
