@@ -36,8 +36,10 @@ def parse_frame_dump(xml_file):
         torch = [SNaht.get('Name'), SNaht.get('ZRotLock'), SNaht.get('WkzName'), SNaht.get('WkzWkl')]
         weld_frames = [] # list of all weld_frames as np.arrays(X,Y,Z) in mm
         pose_frames = [] # list of all pose_frames as 4x4 homogenous transforms
+        starting_lines = [] # list of all starting line (The line of the Point <Pos> in each Pose Frame <Frame>)
+        snaht_number = []
         
-        for Kontur in SNaht.findall('Kontur'):  
+        for j,Kontur in enumerate(SNaht.findall('Kontur')):  
             for Punkt in Kontur.findall('Punkt'):
                 X = float(Punkt.get('X'))
                 Y = float(Punkt.get('Y'))
@@ -72,6 +74,7 @@ def parse_frame_dump(xml_file):
                     Y = Pos.get('Y')
                     Z = Pos.get('Z')
                     torch_frame[0:3,3] = np.array([X,Y,Z])
+                    start_line = Pos._end_line_number
                 for XVek in Frame.findall('XVek'):
                     # 3x3 rotation
                     Xrot = np.array([XVek.get('X'), XVek.get('Y'), XVek.get('Z')])      
@@ -87,12 +90,14 @@ def parse_frame_dump(xml_file):
 
                 #print(torch_frame) 
                 pose_frames.append(torch_frame)
+                starting_lines.append(start_line)
+                snaht_number.append(i)
 
         if len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
             bad_data_counter +=1
             print('Bad data at ', i)
             continue
-        total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames})
+        total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames, 'pose_frames_starting_lines': starting_lines, 'snaht_number' : snaht_number})
 
     print('bad_data_counter = ', bad_data_counter)
     return total_info
@@ -141,6 +146,8 @@ def list2array(total_info):
                 weld_info.append(info['pose_frames'][i][0][2])
                 weld_info.append(info['pose_frames'][i][1][2])
                 weld_info.append(info['pose_frames'][i][2][2])
+                weld_info.append(info['pose_frames_starting_lines'][i])
+                weld_info.append(info['snaht_number'][i])
 
             res.append(np.asarray(weld_info))
     return np.asarray(res)
@@ -148,8 +155,8 @@ def list2array(total_info):
 
 
 if __name__== '__main__':
-    t = parse_frame_dump('data_l/train/models/Reisch/Reisch.xml')
+    tt = parse_frame_dump('./data_ll/train/models/Reisch/Reisch.xml')
     # t = parse_frame_dump('data_error/train/models/201910204483_R1/201910204483_R1.xml')
-    t = list2array(t)
+    t = list2array(tt)
     print(t.shape)
 

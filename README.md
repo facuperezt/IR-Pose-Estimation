@@ -50,6 +50,7 @@ LookupTablePN
 ```
 
 ### Training Step 0. Automatically load Dataset
+(Requires the big folder 'Dataset' to be in the same directory)
 (Skip if files are already in the right directory format)
 In Python3 environment
 ```bash
