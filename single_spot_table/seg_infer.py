@@ -13,9 +13,6 @@ import sys
 import scipy.linalg as linalg
 import math
 from compatibility import listdir
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "single_spot_table"
-from ..update_xml import main as update_xml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
@@ -372,6 +369,7 @@ if __name__=='__main__':
     else:
         folders = listdir(INPUT_PATH)
     for folder in folders:
+        os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder+'.xml') + ' --infered_points_folder_path='+path)
         update_xml(original_xml_path= os.path.join(INPUT_PATH, '../models', folder+'.xml'),parts_path=path)
 
        

@@ -110,7 +110,6 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/', required= False, help='Path to the original models (i.e. ./data/test/models/)')
     parser.add_argument('--infered_points_folder_path', type=str, default='./data_last/test/results/', required= False, help='Path to results (i.e. ./data/test/results/)')
-    parser.add_argument('--model_name', type=str, required= True, help='Name of the infered model')
 
     args = parser.parse_args()
 
