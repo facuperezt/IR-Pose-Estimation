@@ -43,7 +43,7 @@ def _write_individual_models(in_path: str, out_path: str, models_dict: Dict, tes
 
 
 
-def split_models(in_path: str, out_path: str, test_path:str = None, test_model_names: List[str] = None, torch_in_path = 'Dataset/torch', torch_out_path = 'data/torch') -> bool:
+def split_models(in_path: str, out_path: str, test_path:str = None, test_model_names: List[str] = None, torch_in_path = 'Datasets/torch', torch_out_path = 'data/torch') -> bool:
     models_dict, test_dict = _get_individual_models(in_path, test_model_names)
     _write_individual_models(in_path, out_path, models_dict, test_dict, test_path)
     shutil.copytree(torch_in_path, torch_out_path)
