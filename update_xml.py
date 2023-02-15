@@ -116,8 +116,8 @@ def parse_args():
     # assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
 
     ret = {
-        'file_path' : os.path.join(args.original_xml_path, args.model_name, args.model_name+'.xml'),
-        'parts_path' : os.path.join(args.infered_points_folder_path, args.model_name),
+        'file_path' : os.path.join(args.original_xml_path),
+        'parts_path' : os.path.join(args.infered_points_folder_path),
     }
 
     return ret
