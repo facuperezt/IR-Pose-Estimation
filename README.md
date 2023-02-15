@@ -15,6 +15,20 @@ pip install -r requirements_py27.txt
 conda deactivate py27
 ```
 
+## Two liner usage
+On Python3 environment
+```python
+python prepare.py
+```
+On Python2 environment
+```python
+python run.py
+```
+
+"prepare.py" will read a Dataset from Datasets and pre-process it.
+"run.py" will train a model on the small Dataset for 5 epochs and run inference on it.
+
+If this runs you're probably all set.
 
 
 ## Usage
