@@ -544,6 +544,8 @@ def main(pfe):
         print (current_classes)
         is_merge = input ('Do you want to merge some classes?(y/n)\n')
     else:
+        f = open(os.path.join(pfe.path_label_temp,'labels_dict.pkl'), 'rb')
+        labeldict = pickle.load(f)
         is_merge = 'n'
     if is_merge == 'y':
         used = []
