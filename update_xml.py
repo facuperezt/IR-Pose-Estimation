@@ -143,7 +143,9 @@ def main(original_xml_path, parts_path):
     flag = True
     for i,pos in enumerate(original_xml): 
         if flag:
-            next_xml = list2array(parse_frame_dump((next(sorted_xmls))))[0] # some parts may get deleted during library decrease, but they will still be present in the original .xml
+            xml_file = next(sorted_xmls)
+            print(xml_file)
+            next_xml = list2array(parse_frame_dump((xml_file)))[0] # some parts may get deleted during library decrease, but they will still be present in the original .xml
             flag = False
         if np.allclose(pos[4:7].astype(float), next_xml[4:7].astype(float)):
             original_xml[i][17:26] = next_xml[17:26]
