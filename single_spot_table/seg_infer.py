@@ -372,6 +372,6 @@ if __name__=='__main__':
         print(os.path.join(INPUT_PATH, '../models', folder, folder+'.xml'))
         print(path)
         print(os.getcwd())
-        os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder+'.xml') + ' --infered_points_folder_path='+path+'/'+folder)
+        os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder, folder+'.xml') + ' --infered_points_folder_path='+path+'/'+folder)
 
        
