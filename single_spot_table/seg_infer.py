@@ -346,6 +346,8 @@ def infer_all_sep(path_test_component=None):
 
 
 if __name__=='__main__':
+    if __package__ is None:
+        __package__ = "single_spot_table"
     infer_all_sep(TEST_COMP)
     path = ROOT+'/data/test/results'
     folders = listdir(path)
