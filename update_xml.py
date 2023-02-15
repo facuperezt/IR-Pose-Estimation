@@ -7,7 +7,6 @@ import numpy as np
 from argparse import ArgumentParser
 import os
 from utils.xml_parser import list2array, parse_frame_dump
-from typing import Dict
 from utils.compatibility import listdir
 from xml.dom.minidom import Document
 import scipy.linalg as linalg
