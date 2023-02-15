@@ -370,6 +370,5 @@ if __name__=='__main__':
         folders = listdir(INPUT_PATH)
     for folder in folders:
         os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder+'.xml') + ' --infered_points_folder_path='+path)
-        update_xml(original_xml_path= os.path.join(INPUT_PATH, '../models', folder+'.xml'),parts_path=path)
 
        
