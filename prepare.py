@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # Fetch Dataset
     os.system('python model_splitter.py 2 -t 1 10101')
     # Label Dataset
-    os.system('python single_spot_table/obj_geo_based_classification.py')
+    os.system('python single_spot_table/obj_geo_based_classification.py --n_clusters 8')
     # Make Lookup Table
     os.system('python lut.py --label=HFD --fast_sampling')
     # Preprocess Training Data
