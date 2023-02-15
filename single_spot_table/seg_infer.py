@@ -13,7 +13,7 @@ import sys
 import scipy.linalg as linalg
 import math
 from compatibility import listdir
-from ..update_xml import main as update_xml
+from update_xml import main as update_xml
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
