@@ -124,7 +124,9 @@ def parse_args():
 
 def sort_xmls(parts_path, model_name):
     all_parts = [a for a in listdir(parts_path) if len(os.path.splitext(a)[0].split('_')) > 1 and os.path.splitext(a)[-1] == '.xml' and not os.path.splitext(a)[0].split('_')[-1] == 'predicted' and model_name in a]
-    return iter([os.path.join(parts_path, file) for file in sorted(all_parts, key=lambda x: int(os.path.splitext(x)[0].split('_')[-1]))])
+    tmp = sorted(all_parts, key=lambda x: int(os.path.splitext(x)[0].split('_')[-1]))
+    print(tmp)
+    return iter([os.path.join(parts_path, file) for file in tmp])
 
 
 def main(original_xml_path, parts_path):
