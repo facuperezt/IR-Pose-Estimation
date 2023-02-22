@@ -177,7 +177,7 @@ def main(original_xml_path, parts_path):
             next_xml = list2array(parse_frame_dump((xml_file)))[0] # some parts may get deleted during library decrease, but they will still be present in the original .xml
             flag = False
             if next_xml[0] == "AutoDetect_160_1":
-                print(next_xml)
+                print(next_xml[17:26])
         if np.allclose(pos[4:7].astype(float), next_xml[4:7].astype(float)):
             original_xml[i][17:26] = next_xml[17:26]
             flag = True
