@@ -93,7 +93,12 @@ def make_document(frames, parts_path, model_name):
             XVek.setAttribute('Y', str(xv_r[1]))
             XVek.setAttribute('Z', str(xv_r[2]))
             Frame.appendChild(XVek)
-            yv = frame[20:23].astype(float)
+            try:
+                yv = frame[20:23].astype(float)
+            except ValueError as e:
+                print(frame)
+                print(e)
+                raise ValueError
             yv_r = np.matmul(rot_matrix, yv.T)
             YVek = doc.createElement('YVek')
             YVek.setAttribute('X', str(yv_r[0]))
