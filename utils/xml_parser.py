@@ -22,7 +22,7 @@ class LineNumberingParser(ET.XMLParser):
         element._end_byte_index = self.parser.CurrentByteIndex
         return element
 
-def parse_frame_dump(xml_file):
+def parse_frame_dump(xml_file, safe_parsing= True):
     '''parse xml file to get welding spots and torch poses'''
     tree = ET.parse(xml_file, parser= LineNumberingParser())
     root = tree.getroot()
@@ -38,6 +38,7 @@ def parse_frame_dump(xml_file):
         pose_frames = [] # list of all pose_frames as 4x4 homogenous transforms
         starting_lines = [] # list of all starting line (The line of the Point <Pos> in each Pose Frame <Frame>)
         snaht_number = []
+        snaht_id = []
         
         for j,Kontur in enumerate(SNaht.findall('Kontur')):  
             for Punkt in Kontur.findall('Punkt'):
@@ -92,18 +93,26 @@ def parse_frame_dump(xml_file):
                 pose_frames.append(torch_frame)
                 starting_lines.append(start_line)
                 snaht_number.append(i)
+                snaht_id.append(SNaht.get('ID'))
 
-        if len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
+        if safe_parsing and len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
             bad_data_counter +=1
             print('Bad data at ', i)
             continue
-        total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames, 'pose_frames_starting_lines': starting_lines, 'snaht_number' : snaht_number})
+        total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames, 'pose_frames_starting_lines': starting_lines, 'snaht_number' : snaht_number, 'snaht_id' : snaht_id})
 
     print('bad_data_counter = ', bad_data_counter)
-    return total_info
+    if safe_parsing:
+        return total_info
+    else:
+        return total_info, False
 
 
-def list2array(total_info):
+def list2array(total_info, safe_parsing= True):
+    if total_info[-1] == False:
+        total_info = total_info[0]
+        safe_parsing = False
+
     res = []
     for info in total_info:
         for i, spot in enumerate(info['weld_frames']):
@@ -136,7 +145,8 @@ def list2array(total_info):
 
             weld_info.append(spot['EA'])
 
-            if len(info['pose_frames']) > 0:
+            if len(info['pose_frames']) > 0 and safe_parsing or \
+               len(info['pose_frames']) > 0 and i < len(info['pose_frames']) and not safe_parsing:
                 weld_info.append(info['pose_frames'][i][0][0])
                 weld_info.append(info['pose_frames'][i][1][0])
                 weld_info.append(info['pose_frames'][i][2][0])
@@ -148,6 +158,7 @@ def list2array(total_info):
                 weld_info.append(info['pose_frames'][i][2][2])
                 weld_info.append(info['pose_frames_starting_lines'][i])
                 weld_info.append(info['snaht_number'][i])
+                weld_info.append(info['snaht_id'][i])
 
             res.append(np.asarray(weld_info))
     return np.asarray(res)

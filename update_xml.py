@@ -10,6 +10,7 @@ from utils.xml_parser import list2array, parse_frame_dump
 from utils.compatibility import listdir
 from xml.dom.minidom import Document
 import scipy.linalg as linalg
+import time
 
 def make_document(frames, parts_path, model_name):
     '''
@@ -18,24 +19,33 @@ def make_document(frames, parts_path, model_name):
     torch_dict = {'0': 'MRW510_CDD_10GH', '1': 'TAND_GERAD_DD'}
     rot = frames[0][13:16].astype(float)*np.pi/180
     doc = Document()  # create DOM
+    doc.version = "1.0"
+    doc.encoding = "UTF-8"
+    doc.standalone = "no"
+    timestamp = 'Automatically created by TUB on: ' + time.strftime('%d.%m.%Y, %H:%M:%S')
+    doc.appendChild(doc.createComment(timestamp))
     FRAME_DUMP = doc.createElement('FRAME-DUMP') # create root element
     FRAME_DUMP.setAttribute('VERSION', '1.0') 
-    FRAME_DUMP.setAttribute('Baugruppe', 'test')
+    FRAME_DUMP.setAttribute('Baugruppe', model_name)
     doc.appendChild(FRAME_DUMP)
     prev_snaht_number = -1
     for frame in frames:
-        if frame[-1] != prev_snaht_number:
+        if frame[-2] != prev_snaht_number:
             SNaht = doc.createElement('SNaht')
             SNaht.setAttribute('Name',frame[0])
+            SNaht.setAttribute('ID', frame[-1])
             SNaht.setAttribute('ZRotLock',frame[1])
-            SNaht.setAttribute('WkzName',frame[2])
             SNaht.setAttribute('WkzWkl',frame[3])
+            SNaht.setAttribute('WkzName',frame[2])
             FRAME_DUMP.appendChild(SNaht)
 
             Kontur = doc.createElement('Kontur')
             SNaht.appendChild(Kontur)
 
-            prev_snaht_number = frame[-1]
+            Frames = doc.createElement('Frames')
+            SNaht.appendChild(Frames)
+
+            prev_snaht_number = frame[-2]
 
         Punkt = doc.createElement('Punkt')
         Punkt.setAttribute('X', frame[4])
@@ -61,48 +71,53 @@ def make_document(frames, parts_path, model_name):
         Rot.setAttribute('Z', frame[15])
         Punkt.appendChild(Rot)
         EA = doc.createElement('Ext-Achswerte')
-        EA.setAttribute('EA3', str(frame[16]))
+        EA.setAttribute('EA4', str(frame[16]))
         Punkt.appendChild(EA)
+        if len(frame) > 20: # So we also include the flawed data, as in the original
+            Frame = doc.createElement('Frame')
+            Frames.appendChild(Frame)
 
-        Frames = doc.createElement('Frames')
-        SNaht.appendChild(Frames)
+            Pos = doc.createElement('Pos')
+            Pos.setAttribute('X', frame[4])
+            Pos.setAttribute('Y', frame[5])
+            Pos.setAttribute('Z', frame[6])
+            Frame.appendChild(Pos)
+            
+            rot_matrix = linalg.expm(np.cross(np.eye(3), [1,0,0] / linalg.norm([1,0,0]) * (-rot[0])))
 
-        Frame = doc.createElement('Frame')
-        Frames.appendChild(Frame)
+            xv = frame[17:20].astype(float)
 
-        Pos = doc.createElement('Pos')
-        Pos.setAttribute('X', frame[4])
-        Pos.setAttribute('Y', frame[5])
-        Pos.setAttribute('Z', frame[6])
-        Frame.appendChild(Pos)
-        
-        rot_matrix = linalg.expm(np.cross(np.eye(3), [1,0,0] / linalg.norm([1,0,0]) * (-rot[0])))
-
-        xv = frame[17:20].astype(float)
-
-        xv_r = np.matmul(rot_matrix, xv.T)
-        XVek = doc.createElement('XVek')
-        XVek.setAttribute('X', str(xv_r[0]))
-        XVek.setAttribute('Y', str(xv_r[1]))
-        XVek.setAttribute('Z', str(xv_r[2]))
-        Frame.appendChild(XVek)
-        yv = frame[20:23].astype(float)
-        yv_r = np.matmul(rot_matrix, yv.T)
-        YVek = doc.createElement('YVek')
-        YVek.setAttribute('X', str(yv_r[0]))
-        YVek.setAttribute('Y', str(yv_r[1]))
-        YVek.setAttribute('Z', str(yv_r[2]))
-        Frame.appendChild(YVek)
-        zv = frame[23:26].astype(float)
-        zv_r = np.matmul(rot_matrix, zv.T)
-        ZVek = doc.createElement('ZVek')
-        ZVek.setAttribute('X', str(zv_r[0]))
-        ZVek.setAttribute('Y', str(zv_r[1]))
-        ZVek.setAttribute('Z', str(zv_r[2]))
-        Frame.appendChild(ZVek)
+            xv_r = np.matmul(rot_matrix, xv.T)
+            XVek = doc.createElement('XVek')
+            XVek.setAttribute('X', str(xv_r[0]))
+            XVek.setAttribute('Y', str(xv_r[1]))
+            XVek.setAttribute('Z', str(xv_r[2]))
+            Frame.appendChild(XVek)
+            yv = frame[20:23].astype(float)
+            yv_r = np.matmul(rot_matrix, yv.T)
+            YVek = doc.createElement('YVek')
+            YVek.setAttribute('X', str(yv_r[0]))
+            YVek.setAttribute('Y', str(yv_r[1]))
+            YVek.setAttribute('Z', str(yv_r[2]))
+            Frame.appendChild(YVek)
+            zv = frame[23:26].astype(float)
+            zv_r = np.matmul(rot_matrix, zv.T)
+            ZVek = doc.createElement('ZVek')
+            ZVek.setAttribute('X', str(zv_r[0]))
+            ZVek.setAttribute('Y', str(zv_r[1]))
+            ZVek.setAttribute('Z', str(zv_r[2]))
+            Frame.appendChild(ZVek)
+            Rot = doc.createElement('Rot')
+            Rot.setAttribute('X', frame[13])
+            Rot.setAttribute('Y', frame[14])
+            Rot.setAttribute('Z', frame[15])
+            Frame.appendChild(Rot)
+            EA = doc.createElement('Ext-Achswerte')
+            EA.setAttribute('EA4', str(frame[16]))
+            Frame.appendChild(EA)
     
-    f = open(os.path.join(parts_path, model_name+'_predicted.xml'), 'w')
-    f.write(doc.toprettyxml(indent = '  '))
+    f = open(os.path.join(parts_path, model_name+'_predicted.xml'), 'wb')
+    f.write(doc.toprettyxml(indent = '    ', encoding= "UTF-8", standalone=False))
     f.close()
 
 def parse_args():
@@ -141,7 +156,7 @@ def main(original_xml_path, parts_path):
     param: parts_path: path to the results folder, where the sub-XMLs are located
     """
     model_name = os.path.splitext(original_xml_path)[0].split('/')[-1]
-    original_xml = list2array(parse_frame_dump(original_xml_path))
+    original_xml = list2array(parse_frame_dump(original_xml_path, safe_parsing= False))
     sorted_xmls = sort_xmls(parts_path, model_name)
     flag = True
     for i,pos in enumerate(original_xml): 
