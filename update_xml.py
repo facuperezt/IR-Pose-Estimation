@@ -97,6 +97,7 @@ def make_document(frames, parts_path, model_name):
                 yv = frame[20:23].astype(float)
             except ValueError as e:
                 print(frame)
+                print(frame[20:23])
                 print(e)
                 raise ValueError
             yv_r = np.matmul(rot_matrix, yv.T)
