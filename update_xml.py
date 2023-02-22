@@ -97,6 +97,7 @@ def make_document(frames, parts_path, model_name):
                 yv = frame[20:23].astype(float)
             except ValueError as e:
                 print(frame)
+                print(frame[17:20])
                 print(frame[20:23])
                 print(frame[20])
                 print(frame[21])
