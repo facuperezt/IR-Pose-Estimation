@@ -129,7 +129,7 @@ def make_document(frames, parts_path, model_name):
             Frame.appendChild(EA)
     
     f = open(os.path.join(parts_path, model_name+'_predicted.xml'), 'wb')
-    f.write(doc.toprettyxml(indent = '    ', encoding= "UTF-8"))
+    f.write(doc.toprettyxml(indent = '    ', encoding= "UTF-8")) #  removed standalone for compatibility with older python version
     f.close()
 
 def parse_args():
