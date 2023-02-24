@@ -4,6 +4,9 @@ import pickle
 from utils.compatibility import listdir
 import numpy as np
 from argparse import ArgumentParser
+import open3d as o3d
+from utils.foundation import load_pcd_data
+from matplotlib import pyplot as plt
 
 def parse_args():
     parser = ArgumentParser()
@@ -16,7 +19,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def find_similar_slices(model : str, slice : str, folder_path : str = "data/ss_lookup_table/dict", rtol : float= 0.1, verbose= False):
+def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_lookup_table/dict", rtol: float  =  0.1, verbose= False):
     """Finds similar slices within the same model.
 
     Args:
@@ -36,6 +39,7 @@ def find_similar_slices(model : str, slice : str, folder_path : str = "data/ss_l
     with open(os.path.join(folder_path, '_'.join([model, slice]) + '.pkl'), 'rb') as pickle_file:
         chosen_fd = pickle.load(pickle_file)
     ch = [c for c in chosen_fd.values() if c is not None]
+    print(ch[2:])
     out = []
     for file in listdir(folder_path):
         if '_'.join(os.path.splitext(file)[0].split('_')[:-1]) == model:
@@ -50,10 +54,28 @@ def find_similar_slices(model : str, slice : str, folder_path : str = "data/ss_l
                     if verbose:
                         print('\nFor obj: ', file)
                         print('\tDissimilarity Score = ', '{:.2f}'.format(np.sum(sum([abs(ab) for ab in [a - b for a,b in zip(co,ch)]]))))
+                    print(co[2:])
                     out.append(os.path.splitext(file)[0])
 
     return out
-#%%
+
+def visualize_slices(slices):
+    pcds = []
+    cmap_names = ['Spectral', 'coolwarm', 'bwr', 'seismic']
+    for _slice, cmap_name in zip(slices, cmap_names):
+        pcd = o3d.io.read_point_cloud(f'data/train/welding_zone/{_slice}.pcd')
+        labels = load_pcd_data(f'data/train/welding_zone/{_slice}.pcd')[:, 3].astype(int)
+        nr_unique_labels = np.unique(labels).shape[0]
+        cmap = plt.get_cmap(cmap_name, nr_unique_labels)
+        colors_choice = np.array([np.array(cmap(i/nr_unique_labels))[:3] for i in range(cmap.N)])
+        colors = np.array([cmap(np.linalg.norm(x)) for x in pcd.points])
+        pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])
+        pcds.append(pcd)
+        o3d.visualization.draw_geometries(pcds)
+
+
 if __name__ == '__main__':
     args = parse_args()
-    print(find_similar_slices(args.model, args.slice, args.folder_path, args.relative_tolerance, args.verbose))
+    visualize_slices([args.model + '_' + args.slice])
+    s_s = find_similar_slices(args.model, args.slice, args.folder_path, args.relative_tolerance, args.verbose)
+    visualize_slices(s_s)
