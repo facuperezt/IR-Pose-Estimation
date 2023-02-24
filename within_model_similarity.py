@@ -50,7 +50,7 @@ def find_similar_slices(model : str, slice : str, folder_path : str = "data/ss_l
                     if verbose:
                         print('\nFor obj: ', file)
                         print('\tDissimilarity Score = ', '{:.2f}'.format(np.sum(sum([abs(ab) for ab in [a - b for a,b in zip(co,ch)]]))))
-                    out.append(file)
+                    out.append(os.path.splitext(file)[0])
 
     return out
 #%%
