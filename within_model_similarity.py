@@ -98,3 +98,6 @@ if __name__ == '__main__':
         if args.visualize: visualize_slices(s_s)
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
     np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
+    if args.visualize:
+        fig, ax = plt.subplots(figsize=(10,10))
+        ax.imshow(similar_onehot_matrix)
