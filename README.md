@@ -76,6 +76,14 @@ python model_splitter.py <dataset> -t [*test_models]
 
 [^4]: If './data/' already exists, it is renamed to './data_last/' to avoid unexpected behaviours.
 
+#### In the case of unlabeled Data
+In Python3 environment
+```bash
+python single_spot_table/obj_geo_based_classification.py 
+```
+
+And follow the instructions given by the program to label the dataset using its geometrical properties
+
 ### Training Step 1. Making lookup Table
 In Python3 environment
 ```bash
