@@ -29,6 +29,8 @@ import copy
 import time
 from shutil import copyfile
 
+from numba import njit, float64, int64
+
 # # load label dictionary
 # f = open('../data/train/parts_classification/label_dict.pkl', 'rb')
 # lable_list = pickle.load(f)
@@ -187,8 +189,8 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
     files = listdir(path_wz)
 
     for i, file in enumerate(files):
-        print (str(i)+'/'+str(len(files)), file)
-        print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))  
+        # print (str(i)+'/'+str(len(files)), file)
+        # print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))  
         if os.path.splitext(file)[1] == '.pcd':
             name = os.path.splitext(file)[0]
             print ('get feature dict --> ', name)
@@ -238,6 +240,33 @@ def get_feature_dict(path_data, path_wz, path_lookup_table, label_dict_r):
             with open(os.path.join(path_data,  'ss_lookup_table/dict', os.path.splitext(file)[0]+'.pkl'), 'wb') as tf:
                 pickle.dump(feature_dict,tf,protocol=2)
 
+def similarity_njit(feature_dict1, feature_dict2, label_dict_r):
+    norm1 = feature_dict1['normals']
+    torch1 = feature_dict1['torch']
+    array_classes1 = np.asarray([feature_dict1[key] for key in label_dict_r.values()])
+    norm2 = feature_dict2['normals']
+    torch2 = feature_dict2['torch']
+    array_classes2 = np.asarray([feature_dict2[key] for key in label_dict_r.values()])
+    return _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2)
+
+@njit# (float64(float64[:], int64, float64[:, :, :], float64[:], int64, float64[:, :, :]))
+def _similarity_njit(norm1, torch1, array_classes1, norm2, torch2, array_classes2):
+    loss_norm = np.sum((norm1 - norm2) ** 2)
+    loss_torch = int(torch1==torch2)
+    geo_loss = 0
+    for i in range(len(array_classes1)):
+        if array_classes1[i] is None: ac1 = np.array([])
+        else: ac1 = array_classes1[i]
+        if array_classes2[i] is None: ac2 = np.array([])
+        else: ac2 = array_classes2[i]
+        if ac1.shape == ac2.shape:
+            geo_loss += np.sum((ac1-ac2)**2)/100000
+        else:
+            geo_loss += np.abs(ac1.shape[0] - ac2.shape[0])
+
+    return 10*loss_norm + 10* loss_torch + geo_loss
+            
+    
 def similarity(feature_dict1, feature_dict2, label_dict_r):
     '''Calculate the similarity error between two feature dictionaries
     
@@ -283,6 +312,24 @@ def similarity(feature_dict1, feature_dict2, label_dict_r):
         loss_amount += abs(class_num_1_cur-class_num_2_cur)
     return 10*loss_norm + 10*loss_torch + loss_amount + loss_geo/100000
 
+def decrease_lib_dummy(path_data, path_train, path_wz, label_dict_r= None):
+    path = os.path.join(path_data, 'ss_lookup_table/dict')
+    if not os.path.exists(os.path.join(path_train, 'welding_zone_comp')):
+        os.makedirs(os.path.join(path_train, 'welding_zone_comp'))
+    files = listdir(path)
+    new_lib = files
+    fileObject = open(os.path.join(path_data,'ss_lookup_table/comp.txt'), 'w')  
+    for ip in new_lib:  
+        fileObject.write(str(ip))  
+        fileObject.write('\n') 
+    fileObject.close()  
+    for file in new_lib:
+        name = os.path.splitext(file)[0]
+        src = os.path.join(path_wz, name+'.pcd')
+        # src2 = './data/welding_zone/'+name+'.xml'
+        copyfile(src, os.path.join(path_train, 'welding_zone_comp', f'{name}.pcd'))
+        # os.system('cp %s %s' % (src, os.path.join(path_train, 'welding_zone_comp')))
+        # os.system('cp %s ./data/welding_zone_comp' % (src2))
 
 def decrease_lib(path_data, path_train, path_wz, label_dict_r):
     '''Removal of redundant slices
@@ -296,7 +343,7 @@ def decrease_lib(path_data, path_train, path_wz, label_dict_r):
     new_lib = []
     for i in range(len(files)):
     # for i, file in enumerate(files):
-        print (i, files[i])
+        # print (i, files[i])
         if used[i] == 0:
             used[i] = 1
             new_lib.append(files[i])

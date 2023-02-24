@@ -5,6 +5,8 @@
 
 ### Models ###
 models/
+dataset_store/
+*.zip
 
 ### Django ###
 *.log

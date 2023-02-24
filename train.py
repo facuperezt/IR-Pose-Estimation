@@ -9,6 +9,8 @@ sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from seg_makeh5 import processData, wirteFiles, write_data_label_hdf5
 
+from argparse import ArgumentParser
+
 class TrainPointNet2():
     '''Train the pn++ semantic segmentation network 
     making h5 format dataset, training
@@ -72,12 +74,27 @@ class TrainPointNet2():
         path_to_train = './single_spot_table/seg_train.py'
         os.system('python '+path_to_train+args)
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--preprocess', action='store_true', help='Prepare the dataset for training (Python 3.x required)')
+    parser.add_argument('-t', '--train', action='store_true', help='Train with prepared dataset (Python 2.x required)')
+    parser.add_argument('--pcl_density', type=int, default= 40, help='Pointcloud Density (Must be the same for testing)')
+    parser.add_argument('--crop_size', type=int, default= 400, help='Cropped Slice Size (Must be the same for testing)')
+    parser.add_argument('--num_points', type=int, default=2048, help='Number of points per PCL (Must be the same for testing)')
+    parser.add_argument('--max_epoch', type=int, default=100, help='Maximum amount of Epochs for training')
+    parser.add_argument('--batch_size', type=int, default= 16, help='Batch Size for training')
+    parser.add_argument('--learning_rate', type=float, default= 0.001, help='Learning Rate for training')
+    parser.add_argument('--gpu', type= int, default=0, choices=[0,1], help='Which GPU to use.')
+    args = parser.parse_args()
+    assert args.preprocess ^ args.train, 'Script must be called with -p OR -t flag.'
+
     tr = TrainPointNet2(path_data='./data')
-    if sys.version[0] == '3':
+    if args.preprocess:
+        assert sys.version[0] == '3', 'Preprocessing requires Python 3.x (-p)'
         # make dataset
-        tr.make_dataset(crop_size=400, num_points=2048)
-    elif sys.version[0] == '2':
+        tr.make_dataset(crop_size=args.crop_size, num_points=args.num_points)
+    elif args.train:
+        assert sys.version[0] == '2', 'Training requires Python 2.x (-t)'
         # training
-        tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
+        tr.train(log_dir='./data/seg_model', gpu=args.gpu, num_point=args.num_points, max_epoch=args.max_epoch, batch_size=args.batch_size, learning_rate=args.learning_rate)
 
     
