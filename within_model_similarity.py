@@ -93,10 +93,11 @@ if __name__ == '__main__':
         found.append(_slice)
         similar = [s.split('_')[-1] for s in s_s]
         found.extend(similar)
-        for _similar_slice in similar + [_slice]:
+        for _similar_slice in similar:
             similar_onehot_matrix[int(_slice), int(_similar_slice)] = True
         if args.visualize: visualize_slices(s_s)
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
+    similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(similar_onehot_matrix.shape[0]))
     np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
     if args.visualize:
         fig, ax = plt.subplots(figsize=(10,10))
