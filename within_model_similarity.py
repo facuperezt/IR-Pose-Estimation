@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('-atol', '--absolute_tolerance', type=float, required= False, default= 0.1, help= 'Maximum absolute deviation from original slice.')
     parser.add_argument('-v', '--verbose', action='store_true', required=False, help= 'Flag to print Dissimilarity scores w.r.t. candidates.')
     parser.add_argument('-vis', '--visualize', action='store_true', help= 'Whether to visualize each slice (not recommended for large amounts of slices.)')
-    parser.add_argument('--allow_offset', action='store_true', help= 'Consider two slices with constant offset as the same slice.')
+    parser.add_argument('--allow_offset', action='store_true', help= 'Consider two slices with constant offset as the same slice. (WARNING: UNFINISHED. DOESNT WORK WITH MULTIPLE CLUSTERS OF SAME CLASS ON ONE OBJECT)')
 
     return parser.parse_args()
 
@@ -41,7 +41,8 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
     """
     with open(os.path.join(folder_path, '_'.join([model, slice]) + '.pkl'), 'rb') as pickle_file:
         chosen_fd = pickle.load(pickle_file)
-    ch = [c for c in chosen_fd.values() if c is not None]
+    fill_zeros = lambda x: np.zeros((1,8,3)) if x is None else x
+    ch = [fill_zeros(c) for c in chosen_fd.values()]
     if verbose:
         print(ch[2:])
     out_slices = []
@@ -50,13 +51,13 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
         if '_'.join(os.path.splitext(file)[0].split('_')[:-1]) == model:
             with open(os.path.join(folder_path, file), 'rb') as compare_file:
                 compare_fd = pickle.load(compare_file)
-            co = [c for c in compare_fd.values() if c is not None]
-            if len(ch) != len(co):
+            co = [fill_zeros(c) for c in compare_fd.values()]
+            if (np.array([np.sum(h) == 0 for h in ch[2:]]) != np.array([np.sum(o) == 0 for o in co[2:]])).all() or (ch[0] != co[0]).all() or (ch[1] != co[1]).all():
                 continue # No need to compare slices that don't have similar geometrical properties
             if offset_allowed:
                 co_array, ch_array = np.squeeze(np.array(co[2:])), np.squeeze(np.array(ch[2:]))
-                offset= co_array - ch_array # offset from main slice to other slice
-                co_array -= offset[0] # If offsets are consistent, then substracting by the first one should make both slices be the same
+                offset = np.array([np.repeat(np.squeeze(o[0])[np.newaxis,:], 8, axis=0) for o in co_array - ch_array]) # offset from main slice to other slice
+                co_array -= offset # If offsets are consistent, then substracting by the first one should make both slices be the same
                 closeness_per_class = np.allclose(co_array, ch_array, rtol=rtol, atol=atol)
                 _offset = [*offset[0]]
             else:
