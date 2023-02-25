@@ -58,10 +58,10 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
                 offset= co_array - ch_array # offset from main slice to other slice
                 co_array -= offset[0] # If offsets are consistent, then substracting by the first one should make both slices be the same
                 closeness_per_class = np.allclose(co_array, ch_array, rtol=rtol, atol=atol)
-                if closeness_per_class: slice_offsets.append([*offset[0]])
+                _offset = [*offset[0]]
             else:
                 closeness_per_class = np.array([np.allclose(a,b, rtol= rtol, atol= atol) for a,b in zip(co, ch)]).all() # Original slice has to be "b" parameter for np.allclose, see Notes in https://numpy.org/doc/stable/reference/generated/numpy.allclose.html
-                if closeness_per_class: slice_offsets.append([0,0,0])
+                _offset = [0,0,0]
             if closeness_per_class: # Make sure that all geometrical properties are in similar positions
                 if file != '_'.join([model, slice + '.pkl']):
                     if verbose:
@@ -69,6 +69,7 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
                         print('\tDissimilarity Score = ', '{:.2f}'.format(np.sum(sum([abs(ab) for ab in [a - b for a,b in zip(co,ch)]]))))
                         print(co[2:])
                     out_slices.append(os.path.splitext(file)[0])
+                    slice_offsets.append(_offset)
 
     return out_slices, slice_offsets
 
