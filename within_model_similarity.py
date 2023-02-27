@@ -24,7 +24,7 @@ def parse_args():
 
 def check_with_corrected_offset(co_array, ch_array, rtol, atol, slice, file):
     for _co, _ch in zip(co_array, ch_array):
-        closeness_per_class = np.allclose(_co.astype(float), _ch.astype(float), rtol=rtol, atol=atol)
+        closeness_per_class = np.allclose(_co.astype(np.float32), _ch.astype(np.float32), rtol=rtol, atol=atol)
         if not closeness_per_class:
             return False
     return True
@@ -98,13 +98,14 @@ def visualize_slices(slices, data_folder = 'data'):
 
 if __name__ == '__main__':
     args = parse_args()
-    slices = args.slices
-    if len(slices) == 1 and slices[0] == 'all':
-        slices = [os.path.splitext(s)[0].split('_')[-1] for s in listdir(args.folder_path) if args.model == '_'.join(os.path.splitext(s)[0].split('_')[:-1])]
 
-    similar_onehot_matrix = np.zeros((len(slices), len(slices)), dtype= np.bool8)
+    slices = args.slices
+    all_slices = [os.path.splitext(s)[0].split('_')[-1] for s in listdir(args.folder_path) if args.model == '_'.join(os.path.splitext(s)[0].split('_')[:-1])]
+    if len(slices) == 1 and slices[0] == 'all':
+        slices = all_slices
+    similar_onehot_matrix = np.zeros((len(slices), len(all_slices)), dtype= np.bool8)
     found = []
-    for _slice in slices:
+    for i, _slice in enumerate(slices):
         if _slice in found: continue
         if args.visualize: visualize_slices([args.model + '_' + _slice], data_folder = args.folder_path.split('/')[0])
         similar_slices, offsets = find_similar_slices(args.model, _slice, args.folder_path, args.relative_tolerance, args.absolute_tolerance, args.verbose, args.allow_offset)
@@ -112,10 +113,12 @@ if __name__ == '__main__':
         similar = [s.split('_')[-1] for s in similar_slices]
         found.extend(similar)
         for _similar_slice in similar:
-            similar_onehot_matrix[int(_slice), int(_similar_slice)] = True
+            similar_onehot_matrix[i, all_slices.index(_similar_slice)] = True
         if args.visualize: visualize_slices(similar_slices)
-    similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
-    similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(similar_onehot_matrix.shape[0]))
+    
+    similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(*similar_onehot_matrix.shape))
+    if slices == all_slices:
+        similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
     np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
     print(f'{100*(similar_onehot_matrix.sum() - np.eye(*similar_onehot_matrix.shape).sum())/(similar_onehot_matrix.size - np.eye(*similar_onehot_matrix.shape).sum()):.3f}% of similar slices found.')
     fig, ax = plt.subplots(figsize=(10,10))
