@@ -266,7 +266,7 @@ def infer_all_sep(path_test_component=None):
             if os.path.splitext(file)[1] == '.xyz':
                 start = time.time()
                 namestr = os.path.splitext(file)[0]
-                print 'Current input file: ', file
+                print('Current input file: ', file)
                 file_path = os.path.join(slices_path, file)
                 pc = o3d.io.read_point_cloud(file_path)
                 coor_world = o3d.geometry.TriangleMesh.create_coordinate_frame(size=200, origin=np.array([0,0,0]))
@@ -298,7 +298,7 @@ def infer_all_sep(path_test_component=None):
                 l = np.ones(xyz.shape[0])
                 l_expand = np.tile(l,(int(FLAGS.batch_size),1))
 
-                res = model.run_cls(xyz_in_expand, l_expand, False)
+                res = model.run_cls(xyz_in_expand, l_expand, False) #TODO: MODEL und SO
                 fd1 = get_feature_dict_sep((xyz/0.0025)+center, res[0], normals_r, torch)
                 if norm_s in norm_fd.keys():
                     fdicts = norm_fd[norm_s]
@@ -329,9 +329,8 @@ def infer_all_sep(path_test_component=None):
                         matched_temp = os.path.split(fdict)[-1]
                         matched_fd = fd2
                 # print 'min_diff: ', mindiff
-                print 'matched template: ', matched_temp
-                print '----------------------------------------'
-                
+                print('matched template: ', matched_temp)
+                print('----------------------------------------')
 
                 matched_name = os.path.splitext(matched_temp)[0]
                 write_found_pose_in_sep(folder, namestr, frames[0], dict_all[matched_name],rot)
@@ -340,8 +339,8 @@ def infer_all_sep(path_test_component=None):
                 t.append(end-start)
         with open(os.path.join(ROOT+'/data/test/results', folder, 'matched_dict.pkl'), 'wb') as tf:
             pickle.dump(match_dict,tf,protocol=2)
-        print 'Average look up time for one test'
-        print np.mean(np.array(t))
+        print('Average look up time for one test')
+        print(np.mean(np.array(t)))
 
 
 if __name__=='__main__':
