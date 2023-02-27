@@ -22,6 +22,13 @@ def parse_args():
 
     return parser.parse_args()
 
+def check_with_corrected_offset(co_array, ch_array, rtol, atol, slice, file):
+    for _co, _ch in zip(co_array, ch_array):
+        closeness_per_class = np.allclose(_co.astype(float), _ch.astype(float), rtol=rtol, atol=atol)
+        if not closeness_per_class:
+            return False
+    return True
+
 def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_lookup_table/dict", rtol: float  =  0.1, atol : float = 5, verbose= False, offset_allowed = False):
     """Finds similar slices within the same model.
 
@@ -52,17 +59,16 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
             with open(os.path.join(folder_path, file), 'rb') as compare_file:
                 compare_fd = pickle.load(compare_file)
             co = [fill_zeros(c) for c in compare_fd.values()]
-            if (np.array([np.sum(h) == 0 for h in ch[2:]]) != np.array([np.sum(o) == 0 for o in co[2:]])).all() or (ch[0] != co[0]).all() or (ch[1] != co[1]).all():
+            if not all([(lambda x,y: x.shape == y.shape)(_co, _ch) for _co, _ch in zip(co, ch)]) or (np.array([np.sum(h) == 0 for h in ch[2:]]) != np.array([np.sum(o) == 0 for o in co[2:]])).all() or (ch[0] != co[0]).all() or (ch[1] != co[1]).all():
                 continue # No need to compare slices that don't have similar geometrical properties
             if offset_allowed:
-                co_array, ch_array = np.squeeze(np.array(co[2:])), np.squeeze(np.array(ch[2:]))
-                offset = np.array([np.repeat(np.squeeze(o[0])[np.newaxis,:], 8, axis=0) for o in co_array - ch_array]) # offset from main slice to other slice
-                co_array -= offset # If offsets are consistent, then substracting by the first one should make both slices be the same
-                closeness_per_class = np.allclose(co_array, ch_array, rtol=rtol, atol=atol)
-                _offset = [*offset[0]]
+                co_array, ch_array = np.array([_c.reshape(-1,8,3) for _c in co[2:]], dtype=object), np.array([_c.reshape(-1,8,3) for _c in ch[2:]], dtype=object)
+                offset = (co_array[0] - ch_array[0])[0,0,:] # get the offset for one point
+                co_array = np.array([_co - offset if np.abs(_co).sum() != 0 else _co for _co in co_array], dtype= object) # If offsets are consistent, then substracting by the first one should make both slices be the same
+                closeness_per_class = check_with_corrected_offset(co_array, ch_array, rtol, atol, slice, os.path.splitext(file)[0].split('_')[-1])
             else:
                 closeness_per_class = np.array([np.allclose(a,b, rtol= rtol, atol= atol) for a,b in zip(co, ch)]).all() # Original slice has to be "b" parameter for np.allclose, see Notes in https://numpy.org/doc/stable/reference/generated/numpy.allclose.html
-                _offset = [0,0,0]
+                offset = [0,0,0]
             if closeness_per_class: # Make sure that all geometrical properties are in similar positions
                 if file != '_'.join([model, slice + '.pkl']):
                     if verbose:
@@ -70,7 +76,7 @@ def find_similar_slices(model : str, slice: str, folder_path: str = "data/ss_loo
                         print('\tDissimilarity Score = ', '{:.2f}'.format(np.sum(sum([abs(ab) for ab in [a - b for a,b in zip(co,ch)]]))))
                         print(co[2:])
                     out_slices.append(os.path.splitext(file)[0])
-                    slice_offsets.append(_offset)
+                    slice_offsets.append(offset)
 
     return out_slices, slice_offsets
 
@@ -111,6 +117,7 @@ if __name__ == '__main__':
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(similar_onehot_matrix.shape[0]))
     np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
+    print(f'{100*(similar_onehot_matrix.sum() - np.eye(*similar_onehot_matrix.shape).sum())/(similar_onehot_matrix.size - np.eye(*similar_onehot_matrix.shape).sum()):.3f}% of similar slices found.')
     fig, ax = plt.subplots(figsize=(10,10))
     ax.imshow(similar_onehot_matrix)
     plt.show()
