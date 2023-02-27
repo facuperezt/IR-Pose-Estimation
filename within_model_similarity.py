@@ -111,6 +111,6 @@ if __name__ == '__main__':
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(similar_onehot_matrix.shape[0]))
     np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
-    if args.visualize:
-        fig, ax = plt.subplots(figsize=(10,10))
-        ax.imshow(similar_onehot_matrix)
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax.imshow(similar_onehot_matrix)
+    plt.show()
