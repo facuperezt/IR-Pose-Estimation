@@ -347,7 +347,7 @@ if __name__=='__main__':
     infer_all_sep(TEST_COMP)
     path = ROOT+'/data/test/results'
     folders = listdir(path)
-    for folder in folders:
+    for folder in folders: # This loop might not be needed anymore.
         files = listdir(os.path.join(path, folder))
         xml_list = []
         for file in files:
@@ -363,5 +363,14 @@ if __name__=='__main__':
                     f.write(line)
             f.write('</frame-dump>')
     
+    if not TEST_COMP == None:
+        folders = [os.path.split(TEST_COMP)[-1]]
+    else:
+        folders = listdir(INPUT_PATH)
+    for folder in folders:
+        print(os.path.join(INPUT_PATH, '../models', folder, folder+'.xml'))
+        print(path)
+        print(os.getcwd())
+        os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder, folder+'.xml') + ' --infered_points_folder_path='+path+'/'+folder)
 
        

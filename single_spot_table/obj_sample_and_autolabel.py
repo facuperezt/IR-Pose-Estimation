@@ -131,6 +131,12 @@ def sample_and_label(path, path_pcd, path_xyz, label_dict, class_dict, density=4
                 label = label_dict[class_dict[key]]
                 # get number of points according to surface area
                 number_points = int(mesh.get_surface_area()/density) 
+                if number_points <= 0:
+                    number_points = 1000
+                    f = open('objects_with_0_points.txt', 'a')
+                    f.write(file)
+                    f.write('\n')
+                    f.close()
                 # poisson disk sampling
                 pc = mesh.sample_points_poisson_disk(number_points, init_factor=5)
                 xyz = np.asarray(pc.points)
@@ -168,8 +174,14 @@ def sample_and_label_alternative(path, path_pcd, path_xyz, label_dict, class_dic
                 label = label_dict[class_dict[key]]
                 # get number of points according to surface area
                 number_points = int(mesh.get_surface_area()/density) 
+                if number_points <= 0:
+                    number_points = 1000
+                    f = open('objects_with_0_points.txt', 'a')
+                    f.write(file)
+                    f.write('\n')
+                    f.close()
                 # poisson disk sampling
-                if number_points > 12500:
+                if number_points > 10101:
                     pc = mesh.sample_points_uniformly(number_points)
                     # o3d.visualization.draw_geometries([pc])
                 else:

@@ -15,10 +15,24 @@ pip install -r requirements_py27.txt
 conda deactivate py27
 ```
 
+## Two liner usage
+On Python3 environment
+```python
+python prepare.py
+```
+On Python2 environment
+```python
+python run.py
+```
+
+"prepare.py" will read a Dataset from Datasets and pre-process it.
+"run.py" will train a model on the small Dataset for 5 epochs and run inference on it.
+
+If this runs you're probably all set.
 
 
 ## Usage
-Before starting, please place the files in the following directory format:
+Before starting, please place the files in the following directory format or use the dataset loader:
 ```
 LookupTablePN
 ├── data
@@ -48,75 +62,96 @@ LookupTablePN
 │   │   │   │   ├── componentname2.xml
 │   │   │   ├── ...
 ```
-### Training Step 1. Data Pre-processing & Making lookup Table
+
+### Training Step 0. Automatically load Dataset
+(Requires the big folder 'Dataset' to be in the same directory)
+(Skip if files are already in the right directory format)
 In Python3 environment
-```python
-from lut import LookupTable
-lut = LookupTable(path_data='./data', label='PDL', hfd_path_classes=None, pcl_density=40, crop_size=400, num_points=2048)
-lut.make()
-
+```bash
+python model_splitter.py <dataset> -t [*test_models]
 ```
-> class lut.LookupTable(path_data, label, hfd_path_classes, pcl_density=40, crop_size=400, num_points=2048)
-- path_data: The path to the data folder, see readme for the specific directory structure
-- label: Labeling methods, there are 'PDL' and 'HFD'. PDL is pre-defined lable, if the color (material) of the parts of assemblies in the CAD design is differentiated according to the different kinds of parts, use PDL. HFD uses hybrid feature descriptors to cluster the parts of the assemblies, use it by running obj_geo_based_classification.py to generate the classification first, then enter the classification directory in arg hfd_path_classes
-- hfd_path_classes: Path to the classification result by HFD method. The default folder is "./data/train/parts_classification"
-- pcl_density: A parameter that controls the density of the point cloud, the smaller the value the higher the density
-- crop_size: Edge lengths of point cloud slices in millimeters
-- num_points: Number of points contained in the point cloud slice 
+#### Arguments
+- dataset: Name of predetermined dataset **OR** path to folder. Assumes that all "\*.xml", "\*.obj" and "\*.mtl" files are in the same folder and organizes them into './data/' [^4]
+- -t: The next entries are read as model names, that will **NOT** be used for training and are instead put into './data/test/models/' for inference.
 
-### Training Step 2. Train PN++
+[^4]: If './data/' already exists, it is renamed to './data_last/' to avoid unexpected behaviours.
+
+#### In the case of unlabeled Data
+In Python3 environment
+```bash
+python single_spot_table/obj_geo_based_classification.py 
+```
+
+And follow the instructions given by the program to label the dataset using its geometrical properties
+
+### Training Step 1. Making lookup Table
+In Python3 environment
+```bash
+python lut.py [-ARGUMENTS] [-FLAGS]
+```
+#### Arguments
+- --label: 'HFD' for Geometrically labeled data, 'PDL' for pre-labeled data. (Default: 'PDL') [^1]
+- --pcl_density: A parameter that controls the density of the point cloud, the smaller the value the higher the density (Default: 40) [^2]
+- --crop_size: Edge lengths of point cloud slices in millimeters (Default: 400) [^2]
+- --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
+- --free_cores: How many cores should remain unused.
+#### Flags 
+- --fast_sampling: meshes with high vertex density are uniformly sampled into pointclouds (faster than Poisson sampling).
+- --decrease_lib: Removes redundant slices as post-processing (Very slow for big datasets)
+- --skip_sampling: Skips sampling step.
+- --skip_slicing: Skips slicing step.
+- -s, --skip_both: Skips sampling and slicing.
+
+[^1]: Labeling methods, there are 'PDL' and 'HFD'. PDL is pre-defined lable, if the color (material) of the parts of assemblies in the CAD design is differentiated according to the different kinds of parts, use PDL. HFD uses hybrid feature descriptors to cluster the parts of the assemblies, use it by running obj_geo_based_classification.py to generate the classification first, then enter the classification directory in arg hfd_path_classes
+
+### Training Step 2. Pre-processing
+In Python3 environment
+```bash
+python test.py -p [-ARGUMENTS]
+```
+#### Arguments
+- --crop_size: Edge lengths of point cloud slices in millimeters (Default: 400) [^2]
+- --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
+
+
+### Training Step 3. Train PN++
 In Python2 environment
-```python
-from train import TrainPointNet2
-tr = TrainPointNet2(path_data='./data')
-# make dataset
-tr.make_dataset(crop_size=400, num_points=2048)
-# training
-tr.train(log_dir='./data/seg_model', gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
-
+```bash
+python train.py -t [-ARGUMENTS]
 ```
-> class train.TrainPointNet2(path_data)
-- path_data: The path to the data folder, see readme for the specific directory structure
-
-> make_dataset(crop_size=400, num_points=2048)
-- crop_size: Edge lengths of point cloud slices in millimeters. Must be consistent with the values used in the previous lookup table creation [default: 400]
-- num_points: Number of points contained in the point cloud slice  [default: 2048]
-
-> train(log_dir, gpu=0, num_point=2048, max_epoch=100, batch_size=16, learning_rate=0.001)
-- log_dir: path to the pn++ model
-- gpu: GPU to use [default: 0]
-- num_point: Point Number [default: 2048]
-- max_epoch: Epoch to run [default: 100]
-- batch_size: Batch Size during training [default: 16]
-- learning_rate: Initial learning rate [default: 0.001]
+#### Arguments
+- --gpu: Which GPU to use [0 or 1 for dual GPU setups] (Default: 0)
+- --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
+- --max_epoch: Maximum amount of Epochs for training (Default: 100)
+- --batch_size: Batch Size for training (Default: 16) [^2]
+- --learning_rate: Initial Learning Rate (Default: 0.001)
 
 ### Testing Step 1. Data Pre-processing
 In Python3 environment
-```python
-from test import PoseLookup
-te = PoseLookup(path_data='./data')
-te.preprocessing(path_test_component='./data/test/models/201910292399', pcl_density=40, crop_size=400, num_points=2048)
-
+```bash
+python test.py -p [-ARGUMENTS]
 ```
-> class test.PoseLookup(path_data)
-- path_data: The path to the data folder, see readme for the specific directory structure
+#### Arguments
+- --test_models: List of names of models to be used for inference. (If empty, all models in './data/test/models/' will be used.) [^3]
+- --pcl_density: A parameter that controls the density of the point cloud, the smaller the value the higher the density (Default: 40) [^2]
+- --crop_size: Edge lengths of point cloud slices in millimeters (Default: 400) [^2]
+- --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
+- --batch_size: Batch Size for training (Default: 16) [^2]
 
-> preprocessing(path_test_component, pcl_density=40, crop_size=400, num_points=2048)
-- path_test_component: path to the test component
-- pcl_density: A parameter that controls the density of the point cloud, the smaller the value the higher the density
-- crop_size: Edge lengths of point cloud slices in millimeters. Must be consistent with the values used in the previous lookup table creation [default: 400]
-- num_points: Number of points contained in the point cloud slice  [default: 2048]
+#### Notes
+The models need to be in './data/test/models/'
 
 ### Testing Step 2. Inference
-
 In Python2 environment
-```python
-from test import PoseLookup
-te = PoseLookup(path_data='./data')
-te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', test_one_component='./data/test/models/201910292399', batch_size=16)
+```bash
+python test.py -i [-ARGUMENTS]
 ```
-> inference(model_path, test_input, test_one_component)
-- model_path: path to the pn++ model [default: './data/seg_model/model1.ckpt']
-- test_input: path to the folder of welding slices for testing [default: './data/test/welding_zone_test']
-- test_one_component: if only one component will be tested, enter the path here [default: None]
-- batch_size: keep the same batch Size with training [default: 16]
+#### Arguments
+- --model_path: Path of model to run inference with (Default: ''./data/seg_model/model1.ckpt')
+- --batch_size: Batch Size for training (Default: 16) [^2]
+
+#### Outputs
+Stores the results in './data/test/results/'
+
+
+[^2]: The Arguments marked with [^2] must be coherent in all steps.

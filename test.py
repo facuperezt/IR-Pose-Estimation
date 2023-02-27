@@ -8,6 +8,10 @@ BASE = os.path.dirname(CURRENT_PATH)
 sys.path.insert(0,os.path.join(BASE,'utils'))
 sys.path.insert(0,os.path.join(BASE,'single_spot_table'))
 from test_preprocessing import sample_test_pc, slice_test
+from utils.compatibility import listdir
+
+from multiprocessing import Pool, cpu_count
+from argparse import ArgumentParser
 
 class PoseLookup():
     def __init__(self,
@@ -23,6 +27,11 @@ class PoseLookup():
         self.path_dataset = os.path.join(self.path_test, 'dataset')
         if not os.path.exists(self.path_dataset):
             os.makedirs(self.path_dataset)
+
+    def preprocessing_pool(self, args):
+        path_test_components, (pcl_density, crop_size, num_points) = args
+        for path in path_test_components:
+            self.preprocessing(path, pcl_density, crop_size, num_points)
 
     def preprocessing(self,
                       path_test_component,
@@ -79,8 +88,8 @@ class PoseLookup():
     def inference(self,
                   model_path,
                   test_input,
-                  test_one_component,
-                  batch_size):
+                  test_one_component = None,
+                  batch_size = 16):
         '''test a component
         
         Args:
@@ -89,14 +98,56 @@ class PoseLookup():
             test_one_component: if only one component will be tested, enter the path here [default: None]
             batch_size: keep the same batch size with training
         '''
-        args = " --model_path='"+model_path+"' --test_input="+test_input+" --test_one_component="+test_one_component\
-            +" --batch_size="+str(batch_size)
+        if test_one_component is not None:
+            args = " --model_path='"+model_path+"' --test_input="+test_input+" --test_one_component="+test_one_component\
+                +" --batch_size="+str(batch_size)
+        else:
+            args = " --model_path='"+model_path+"' --test_input="+test_input+" --batch_size="+str(batch_size)
         path_to_inference = './single_spot_table/seg_infer.py'
         os.system('python '+path_to_inference+args)
         
         
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--preprocess', action='store_true', help='Run script preprocessing (Requires python 3.x)')
+    parser.add_argument('-i', '--inference', action='store_true', help='Run inference script (Requires python 2.x)')
+    parser.add_argument('--test_models', nargs='*', type=str, help='Pass name of models to be preprocessed for inference. If no name is passed all models in --test_folder will be preprocessed.')
+    parser.add_argument('--pcl_density', type=int, default= 40, help='Pointcloud Density (Must be the same as in training)')
+    parser.add_argument('--crop_size', type=int, default= 400, help='Cropped Slice Size (Must be the same as in training)')
+    parser.add_argument('--num_points', type=int, default=2048, help='Number of points per PCL (Must be the same as in training)')
+    parser.add_argument('--batch_size', type= int, default= 16, help='Batch size of network (Must be the same as in training)')
+    parser.add_argument('--model_path', type=str, default= './data/seg_model/model1.ckpt', help='Path of model to run inference with')
+    args = parser.parse_args()
+    assert args.preprocess ^ args.inference, 'Script has to be used with -p OR -i flag'
+
     te = PoseLookup(path_data='./data')
-    # te.preprocessing('./data/test/models/22-10-14_Trailer')
-    te.inference(model_path='./data/seg_model/model1.ckpt', test_input='./data/test/welding_zone_test', \
-        test_one_component='./data/test/models/22-10-14_Trailer', batch_size=16)
+    if args.preprocess:
+        assert sys.version[0] == '3', 'Python 3.x is required for preprocessing (-p)'
+        test_models = [] if args.test_models is None else args.test_models.copy()
+        if len(test_models) != 1:
+            path_test = './data/test/models/'
+            test_models = listdir(path_test)
+            if len(test_models) > 0:
+                test_models = [tm for tm in test_models if tm in test_models]
+            print(test_models)
+            test_models = [path_test + test_model for test_model in test_models if os.path.isdir(os.path.join(path_test, test_model))]    # remove non-folders
+            nr_processes = max(min(len(test_models), cpu_count() - 2), 1)
+            k, m = divmod(len(test_models), nr_processes)                                                    # divide among processors
+            split_paths = list(test_models[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(nr_processes))
+            pcl_density, crop_size, num_points = args.pcl_density, args.crop_size, args.num_points
+            repeated_args = [[pcl_density, crop_size, num_points]]*nr_processes
+            all_args = [[path, _args] for path, _args in zip(split_paths, repeated_args)]
+            print ('preprocessing test models... ', nr_processes, ' workers ...', test_models)
+            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            with Pool(nr_processes) as p:
+                p.map(te.preprocessing_pool, [_args for _args in all_args])
+
+            print('processing finished')
+            print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
+            # for test_model in test_models:
+            #     te.preprocessing(path_test_component='./data/test/models/' + test_model, pcl_density=40, crop_size=400, num_points=2048)
+        elif len(test_models) == 1 in listdir('./data/test/models'):
+            te.preprocessing(path_test_component='./data/test/models/' + test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
+    elif args.inference:
+        assert sys.version[0] == '2', 'Python 2.x is required for preprocessing (-i)'
+        te.inference(model_path=args.model_path, test_input='./data/test/welding_zone_test', batch_size=args.batch_size)

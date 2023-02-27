@@ -43,9 +43,10 @@ def _write_individual_models(in_path: str, out_path: str, models_dict: Dict, tes
 
 
 
-def split_models(in_path: str, out_path: str, test_path:str = None, test_model_names: List[str] = None) -> bool:
+def split_models(in_path: str, out_path: str, test_path:str = None, test_model_names: List[str] = None, torch_in_path = 'Datasets/torch', torch_out_path = 'data/torch') -> bool:
     models_dict, test_dict = _get_individual_models(in_path, test_model_names)
     _write_individual_models(in_path, out_path, models_dict, test_dict, test_path)
+    shutil.copytree(torch_in_path, torch_out_path)
     return True
 
 
@@ -54,9 +55,9 @@ if __name__ == '__main__':
     if os.path.exists('./data'):
         os.system('mv data data_last')
     if args.dataset in ['1', '2']:
-        split_models(f'Dataset/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)
+        split_models(f'Datasets/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)
     elif args.dataset == 'trailer':
-        split_models(f'Dataset/ds_Trailer', 'data/train/models', 'data/test/models', args.test_models)
+        split_models(f'Datasets/ds_Trailer', 'data/train/models', 'data/test/models', args.test_models)
     else:
         split_models(args.dataset, 'data/train/models', 'data/test/models', args.test_models)
 

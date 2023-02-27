@@ -3,6 +3,7 @@ open3d==0.14.1
 trimesh==3.12.6
 scikit-learn==1.0.2
 h5py==3.7.0
+numba==0.56.4
 
 pickleshare==0.7.5
 ninja==1.10.2.3
