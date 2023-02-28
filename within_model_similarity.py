@@ -6,6 +6,10 @@ import numpy as np
 from argparse import ArgumentParser
 import open3d as o3d
 from utils.foundation import load_pcd_data
+import sys
+# Force python XML parser not faster C accelerators
+# because we can't hook the C implementation
+sys.modules['_elementtree'] = None
 from utils.xml_parser import list2array, parse_frame_dump
 from matplotlib import pyplot as plt
 from xml.dom.minidom import Document
