@@ -6,7 +6,10 @@ import numpy as np
 from argparse import ArgumentParser
 import open3d as o3d
 from utils.foundation import load_pcd_data
+from utils.xml_parser import list2array, parse_frame_dump
 from matplotlib import pyplot as plt
+from xml.dom.minidom import Document
+import time
 # import line_profiler as lp
 
 def parse_args():
@@ -20,6 +23,8 @@ def parse_args():
     parser.add_argument('-v', '--verbose', action='store_true', required=False, help= 'Flag to print Dissimilarity scores w.r.t. candidates.')
     parser.add_argument('-vis', '--visualize', action='store_true', help= 'Whether to visualize each slice (not recommended for large amounts of slices.)')
     parser.add_argument('--allow_offset', action='store_true', help= 'Consider two slices with constant offset as the same slice. (WARNING: UNFINISHED. DOESNT WORK WITH MULTIPLE CLUSTERS OF SAME CLASS ON ONE OBJECT)')
+    parser.add_argument('--models_folder', type=str, required=False, default='./data/train/models/')
+    parser.add_argument('-o', '--output_folder', type=str, required=False, default='./similarity_outputs/')
 
     return parser.parse_args()
 
@@ -100,7 +105,62 @@ def visualize_slices(slices, data_folder = 'data'):
         pcds.append(pcd)
         o3d.visualization.draw_geometries(pcds)
 
+def write_similarities_in_xml(model, frames, name= 'default', path = './', info=None):
+    doc = Document()  # create DOM
+    doc.version = "1.0"
+    doc.encoding = "UTF-8"
+    doc.standalone = "no"
+    timestamp = 'Automatically created by TUB on: ' + time.strftime('%d.%m.%Y, %H:%M:%S')
+    doc.appendChild(doc.createComment(timestamp))
+    doc.appendChild(doc.createComment(repr(info)))
+    FRAME_DUMP = doc.createElement('FRAME-DUMP') # create root element
+    FRAME_DUMP.setAttribute('VERSION', '1.0') 
+    FRAME_DUMP.setAttribute('Baugruppe', model)
+    doc.appendChild(FRAME_DUMP)
+    for frame in frames:
 
+        SNaht = doc.createElement('SNaht')
+        SNaht.setAttribute('Name',frame[0])
+        if frame[-1] is not None: SNaht.setAttribute('ID', frame[-1])
+        SNaht.setAttribute('ZRotLock',frame[1])
+        SNaht.setAttribute('WkzWkl',frame[3])
+        SNaht.setAttribute('WkzName',frame[2])
+        FRAME_DUMP.appendChild(SNaht)
+
+        Kontur = doc.createElement('Kontur')
+        SNaht.appendChild(Kontur)
+
+        Punkt = doc.createElement('Punkt')
+        Punkt.setAttribute('X', frame[4])
+        Punkt.setAttribute('Y', frame[5])
+        Punkt.setAttribute('Z', frame[6])
+        Kontur.appendChild(Punkt)
+
+        Fl_Norm1 = doc.createElement('Fl_Norm')
+        Fl_Norm1.setAttribute('X', frame[7])
+        Fl_Norm1.setAttribute('Y', frame[8])
+        Fl_Norm1.setAttribute('Z', frame[9])
+        Punkt.appendChild(Fl_Norm1)
+
+        Fl_Norm2 = doc.createElement('Fl_Norm')
+        Fl_Norm2.setAttribute('X', frame[10])
+        Fl_Norm2.setAttribute('Y', frame[11])
+        Fl_Norm2.setAttribute('Z', frame[12])
+        Punkt.appendChild(Fl_Norm2)
+        
+        Rot = doc.createElement('Rot')
+        Rot.setAttribute('X', frame[13])
+        Rot.setAttribute('Y', frame[14])
+        Rot.setAttribute('Z', frame[15])
+        Punkt.appendChild(Rot)
+        EA = doc.createElement('Ext-Achswerte')
+        EA.setAttribute('EA4', str(frame[16]))
+        Punkt.appendChild(EA)
+    
+    os.makedirs(os.path.join(path, model), exist_ok=True)
+    f = open(os.path.join(path, model, name+'_similar_slices.xml'), 'wb')
+    f.write(doc.toprettyxml(indent = '    ', encoding= "UTF-8")) #  removed standalone for compatibility with older python version
+    f.close()
 
 if __name__ == '__main__':
     args = parse_args()
@@ -130,9 +190,18 @@ if __name__ == '__main__':
     similar_onehot_matrix = np.maximum(similar_onehot_matrix, np.eye(*similar_onehot_matrix.shape))
     if slices == all_slices:
         similar_onehot_matrix = np.maximum(similar_onehot_matrix, similar_onehot_matrix.transpose())
-    np.save(args.model+'_similarity_onehot_matrix.npy', similar_onehot_matrix)
+    # np.save(args.model+'_'+str(len(slices))+'Slices_similarity_onehot_matrix.npy', similar_onehot_matrix)
     print(f'{100*(similar_onehot_matrix.sum() - np.eye(*similar_onehot_matrix.shape).sum())/(similar_onehot_matrix.size - np.eye(*similar_onehot_matrix.shape).sum()):.3f}% of similar slices found.')
     # prof.print_stats()
-    fig, ax = plt.subplots(figsize=(10,10))
-    ax.imshow(similar_onehot_matrix)
-    plt.show()
+    # fig, ax = plt.subplots(figsize=(10,10))
+    # ax.imshow(similar_onehot_matrix)
+    if not os.path.isdir(args.output_folder): os.makedirs(args.output_folder)
+    xml_path = os.path.join(args.models_folder, args.model, args.model+'.xml')
+    assert os.path.isfile(xml_path)
+    frames = list2array(parse_frame_dump(xml_path, False))
+    assert len(frames) == len(all_slices), 'Nr Slices and nr frames should match'
+    nx, ny = np.nonzero(similar_onehot_matrix - np.eye(*similar_onehot_matrix.shape)) # remove the diagonal
+    for slice in np.unique(nx):
+        idx = np.where(nx == slice)
+        _frames = frames[[slice, *ny[idx]]] # add the diagonal element back in first spot, to make sure its the first one in the xml
+        write_similarities_in_xml(args.model, _frames.astype(str), name=str(slice), path=args.output_folder, info=args)
