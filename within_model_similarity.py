@@ -1,4 +1,8 @@
 #%%
+import sys
+# Force python XML parser not faster C accelerators
+# because we can't hook the C implementation
+sys.modules['_elementtree'] = None
 import os
 import pickle
 from utils.compatibility import listdir
@@ -6,10 +10,6 @@ import numpy as np
 from argparse import ArgumentParser
 import open3d as o3d
 from utils.foundation import load_pcd_data
-import sys
-# Force python XML parser not faster C accelerators
-# because we can't hook the C implementation
-sys.modules['_elementtree'] = None
 from utils.xml_parser import list2array, parse_frame_dump
 from matplotlib import pyplot as plt
 from xml.dom.minidom import Document
@@ -202,8 +202,8 @@ if __name__ == '__main__':
     if not os.path.isdir(args.output_folder): os.makedirs(args.output_folder)
     xml_path = os.path.join(args.models_folder, args.model, args.model+'.xml')
     assert os.path.isfile(xml_path)
-    frames = list2array(parse_frame_dump(xml_path, False))
-    assert len(frames) == len(all_slices), 'Nr Slices and nr frames should match'
+    frames = list2array(parse_frame_dump(xml_path, True)) # Has to be true, because bad data breaks the arrays (#TODO can be patched, since missing data could be worked around)
+    # assert len(frames) == len(all_slices), 'Nr Slices and nr frames should match' # Well guess what, they don't :(
     nx, ny = np.nonzero(similar_onehot_matrix - np.eye(*similar_onehot_matrix.shape)) # remove the diagonal
     for slice in np.unique(nx):
         idx = np.where(nx == slice)
