@@ -204,4 +204,4 @@ if __name__ == '__main__':
     for slice in np.unique(nx):
         idx = np.where(nx == slice)
         _frames = frames[[slice, *ny[idx]]] # add the diagonal element back in first spot, to make sure its the first one in the xml
-        write_similarities_in_xml(args.model, _frames.astype(str), name=str(slice), path=args.output_folder, info=args)
+        write_similarities_in_xml(args.model, _frames.astype(str), name=str(slices[slice]), path=args.output_folder, info=args)
