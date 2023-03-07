@@ -149,5 +149,5 @@ if __name__ == '__main__':
         elif len(test_models) == 1 in listdir('./data/test/models'):
             te.preprocessing(path_test_component='./data/test/models/' + test_models[0], pcl_density=args.pcl_density, crop_size=args.crop_size, num_points=args.num_points)
     elif args.inference:
-        assert sys.version[0] == '2', 'Python 2.x is required for preprocessing (-i)'
+        assert sys.version[0] == '2', 'Python 2.x is required for inference (-i)'
         te.inference(model_path=args.model_path, test_input='./data/test/welding_zone_test', batch_size=args.batch_size)
