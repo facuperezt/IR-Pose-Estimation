@@ -33,6 +33,7 @@ def make_document(frames, parts_path, model_name):
         if frame[-2] != prev_snaht_number:
             SNaht = doc.createElement('SNaht')
             SNaht.setAttribute('Name',str(frame[0]))
+            # SNaht.setAttribute('ID', frame[-1])
             SNaht.setAttribute('ID', str(frame[-1]) if frame[-1] is not None else None)
             SNaht.setAttribute('ZRotLock',str(frame[1]))
             SNaht.setAttribute('WkzWkl',str(frame[3]))
@@ -48,15 +49,15 @@ def make_document(frames, parts_path, model_name):
             prev_snaht_number = frame[-2]
 
         Punkt = doc.createElement('Punkt')
-        Punkt.setAttribute('X',str( frame[4]))
-        Punkt.setAttribute('Y',str( frame[5]))
-        Punkt.setAttribute('Z',str( frame[6]))
+        Punkt.setAttribute('X',str(frame[4]))
+        Punkt.setAttribute('Y',str(frame[5]))
+        Punkt.setAttribute('Z',str(frame[6]))
         Kontur.appendChild(Punkt)
 
         Fl_Norm1 = doc.createElement('Fl_Norm')
-        Fl_Norm1.setAttribute('X',str( frame[7]))
-        Fl_Norm1.setAttribute('Y',str( frame[8]))
-        Fl_Norm1.setAttribute('Z',str( frame[9]))
+        Fl_Norm1.setAttribute('X',str(frame[7]))
+        Fl_Norm1.setAttribute('Y',str(frame[8]))
+        Fl_Norm1.setAttribute('Z',str(frame[9]))
         Punkt.appendChild(Fl_Norm1)
 
         Fl_Norm2 = doc.createElement('Fl_Norm')
