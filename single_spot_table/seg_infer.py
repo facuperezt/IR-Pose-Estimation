@@ -246,7 +246,7 @@ def infer_all_sep(path_test_component=None):
         dict_all = pickle.load(f)
     with open(ROOT+'/data/ss_lookup_table/norm_fd.pkl', 'rb') as g:
         norm_fd = pickle.load(g)
-    model = Model(MODEL_PATH)
+    model = Model(MODEL_PATH) #TODO: Replace model
     if not path_test_component == None:
         folders = [os.path.split(path_test_component)[-1]]
     else:
