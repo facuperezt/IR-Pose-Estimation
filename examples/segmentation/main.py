@@ -335,6 +335,8 @@ def train_one_epoch(model, train_loader, criterion, optimizer, scheduler, scaler
     loss_meter = AverageMeter()
     cm = ConfusionMatrix(num_classes=cfg.num_classes, ignore_index=cfg.ignore_index)
     model.train()  # set model to training mode
+    print("Type: ", type(train_loader))
+
     pbar = tqdm(enumerate(train_loader), total=train_loader.__len__())
     num_iter = 0
     for idx, data in pbar:

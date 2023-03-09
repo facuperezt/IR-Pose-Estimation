@@ -6,7 +6,7 @@ import os
 import yaml
 
 import torch
-import tqdm as tqdm
+from tqdm import tqdm
 
 from openpoints.dataset import build_dataloader_from_cfg, get_features_by_keys, get_class_weights
 from openpoints.loss import build_criterion_from_cfg
@@ -14,7 +14,7 @@ from openpoints.models import build_model_from_cfg
 from openpoints.optim import build_optimizer_from_cfg
 from openpoints.scheduler import build_scheduler_from_cfg
 from openpoints.utils import AverageMeter, ConfusionMatrix, get_mious
-from openpoints.utils import set_random_seed, load_checkpoint, resume_checkpoint, setup_logger_dist, \
+from openpoints.utils import set_random_seed, save_checkpoint, load_checkpoint, resume_checkpoint, setup_logger_dist, \
     cal_model_parm_nums, generate_exp_directory, resume_exp_directory, EasyConfig, dist_utils
 
 
@@ -138,10 +138,8 @@ def main(gpu, cfg):
     val_miou, val_macc, val_oa, val_ious, val_accs = 0., 0., 0., [], []
     best_val, macc_when_best, oa_when_best, ious_when_best, best_epoch = 0., 0., 0., [], 0
     for epoch in range(cfg.start_epoch, cfg.epochs + 1):
-        """
         if cfg.distributed:
             train_loader.sampler.set_epoch(epoch)
-        """
         if hasattr(train_loader.dataset, 'epoch'):  # some dataset sets the dataset length as a fixed steps.
             train_loader.dataset.epoch = epoch - 1
         train_loss, train_miou, train_macc, train_oa, _, _ = \
@@ -176,6 +174,15 @@ def main(gpu, cfg):
 #            writer.add_scalar('train_miou', train_miou, epoch)
 #            writer.add_scalar('train_macc', train_macc, epoch)
 #            writer.add_scalar('lr', lr, epoch)
+
+        if cfg.sched_on_epoch:
+            scheduler.step(epoch)
+        if cfg.rank == 0:
+            save_checkpoint(cfg, model, epoch, optimizer, scheduler,
+                            additioanl_dict={'best_val': best_val},
+                            is_best=is_best
+                            )
+            is_best = False
 
     # validate
     with np.printoptions(precision=2, suppress=True):
