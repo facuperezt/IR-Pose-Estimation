@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<FRAME-DUMP Baugruppe="10101_17" VERSION="1.0">
+  <SNaht Name="PgmDef_7_7" WkzName="MRW510_CDD_10GH" WkzWkl="45" ZRotLock="0">
+    <Kontur>
+      <Punkt X="-14.99999990000001" Y="25.69999999999991" Z="-410.4000000000002">
+        <Fl_Norm X="3.05311331771918e-16" Y="-1.054711873393899e-15" Z="1.000000000000028"/>
+        <Fl_Norm X="-1.000000000000001" Y="1.110223024625157e-16" Z="5.551115123125783e-17"/>
+        <Rot X="0.0" Y="0.0" Z="0.0"/>
+        <Ext-Achswerte EA3="0.0"/>
+      </Punkt>
+    </Kontur>
+  </SNaht>
+</FRAME-DUMP>

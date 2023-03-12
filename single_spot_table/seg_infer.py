@@ -1,4 +1,4 @@
-import tensorflow as tf
+#import tensorflow as tf
 import os
 import numpy as np
 import argparse
@@ -12,26 +12,31 @@ import random
 import sys
 import scipy.linalg as linalg
 import math
-from compatibility import listdir
+import logging
+import torch
+
+from single_spot_table.compatibility import listdir
+from openpoints.models import build_model_from_cfg
+from openpoints.utils import cal_model_parm_nums
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(BASE_DIR)
 TF_OPS_DIR = os.path.join(ROOT, 'pointnet2', 'tf_ops')
-parser = argparse.ArgumentParser()
-parser.add_argument('--model_path', default='../data/seg_model/model1.ckpt', help='model checkpoint file path [default: log/model1.ckpt]')
-parser.add_argument('--test_input', default='../data/test/welding_zone_test', help='path to input test xyz file')
-parser.add_argument('--test_one_component', default=None, help='path to folder of single test component')
-parser.add_argument('--batch_size', default=16, help='keep the same size with training')
-FLAGS = parser.parse_args()
+#parser = argparse.ArgumentParser()
+#parser.add_argument('--model_path', default='../data/seg_model/model1.ckpt', help='model checkpoint file path [default: log/model1.ckpt]')
+#parser.add_argument('--test_input', default='../data/test/welding_zone_test', help='path to input test xyz file')
+#parser.add_argument('--test_one_component', default=None, help='path to folder of single test component')
+#parser.add_argument('--batch_size', default=16, help='keep the same size with training')
+#FLAGS = parser.parse_args()
 
 
-sampling_module = tf.load_op_library(os.path.join(TF_OPS_DIR, 'sampling/tf_sampling_so.so'))
-grouping_module = tf.load_op_library(os.path.join(TF_OPS_DIR, 'grouping/tf_grouping_so.so'))
-interpolation_module = tf.load_op_library(os.path.join(TF_OPS_DIR,'3d_interpolation/tf_interpolate_so.so'))
+#sampling_module = tf.load_op_library(os.path.join(TF_OPS_DIR, 'sampling/tf_sampling_so.so'))
+#grouping_module = tf.load_op_library(os.path.join(TF_OPS_DIR, 'grouping/tf_grouping_so.so'))
+#interpolation_module = tf.load_op_library(os.path.join(TF_OPS_DIR,'3d_interpolation/tf_interpolate_so.so'))
 
-MODEL_PATH = FLAGS.model_path
-INPUT_PATH = FLAGS.test_input
-TEST_COMP = FLAGS.test_one_component
+batch_size = 16
+INPUT_PATH = './data/test/welding_zone_test'
+TEST_COMP = None
 sys.path.append(os.path.join(ROOT,'utils'))
 sys.path.append(os.path.join(ROOT,'pointnet2','utils'))
 from hdf5_util import *
@@ -49,9 +54,8 @@ labeldict = dict([val, key] for key, val in lable_list.items())
 #                 'class_5': 5, 'class_6': 6, 'class_7': 7, 'class_8': 8, 'class_9': 9, 
 #                 'class_10': 10, 'class_11': 11}
 # labeldict = dict([val, key] for key, val in label_dict.items())  
+'''
 class Model():
-    '''Import model
-    '''
     def __init__(self, PATH_TO_CKPT):
         self.graph = tf.Graph()
         config = tf.ConfigProto()
@@ -78,15 +82,15 @@ class Model():
 
         # cls = self.graph.get_tensor_by_name('Equal:0')
         return self.sess.run(cls, feed_dict={input_points:input_data,labels:l,training:is_training})
+'''
 
-
-def get_feature_dict_sep(xyz, label, normals, torch):
+def get_feature_dict_sep(xyz, label, normals, tor):
     '''Generate the feature dict for tested slice, the dict contains
     the nummber of each class and the coordinates of bounding box of each cluster of class'''
     feature_dict = {}
     elements = []
     feature_dict['normals'] = normals.astype(float)
-    feature_dict['torch'] = torch
+    feature_dict['tor'] = tor
     min_edge = np.min(np.max(xyz, axis=0)-np.min(xyz, axis=0))
     for i in range(len(labeldict)):
         idx = np.argwhere(label==i)
@@ -123,9 +127,9 @@ def similarity_sep(feature_dict1, feature_dict2):
     norm1 = feature_dict1['normals']
     norm2 = feature_dict2['normals']
     loss_norm = np.sum((norm1-norm2)**2)
-    torch1 = feature_dict1['torch']
-    torch2 = feature_dict2['torch']
-    loss_torch = int(torch1==torch2)
+    tor1 = feature_dict1['tor']
+    tor2 = feature_dict2['tor']
+    loss_tor = int(tor1==tor2)
     for i in range(len(labeldict)):
         # print feature_dict1[labeldict[i]]
         # get the number of each class
@@ -149,12 +153,12 @@ def similarity_sep(feature_dict1, feature_dict2):
                 box2_all_points = f2[_] #shape(8, 3)
                 loss_geo += np.sum((box1_all_points-box2_all_points)**2)
         loss_amount += abs(class_num_1_cur-class_num_2_cur)
-    return 10*loss_norm + 10*loss_torch + loss_amount + loss_geo/100000
+    return 10*loss_norm + 10*loss_tor + loss_amount + loss_geo/100000
 
 def write_found_pose_in_sep(folder, filename, frame, pose, rot):
     '''Write the found poses to the xml file
     '''
-    torch_dict = {'0': 'MRW510_CDD_10GH', '1': 'TAND_GERAD_DD'}
+    tor_dict = {'0': 'MRW510_CDD_10GH', '1': 'TAND_GERAD_DD'}
     
     doc = Document()  # create DOM
     FRAME_DUMP = doc.createElement('FRAME-DUMP') # create root element
@@ -238,15 +242,15 @@ def write_found_pose_in_sep(folder, filename, frame, pose, rot):
     f.write(doc.toprettyxml(indent = '  '))
     f.close()
 
-
-
-
-def infer_all_sep(path_test_component=None):
+def infer_all_sep(model_1, path_test_component=None):
     with open(ROOT+'/data/train/lookup_table/lookup_table.pkl', 'rb') as f:
         dict_all = pickle.load(f)
     with open(ROOT+'/data/ss_lookup_table/norm_fd.pkl', 'rb') as g:
         norm_fd = pickle.load(g)
-    model = Model(MODEL_PATH) #TODO: Replace model
+    model = model_1
+    model_size = cal_model_parm_nums(model)
+    logging.info(model)
+    logging.info('Number of params: %.4f M' % (model_size / 1e6)) #TODO: Replace model
     if not path_test_component == None:
         folders = [os.path.split(path_test_component)[-1]]
     else:
@@ -260,6 +264,8 @@ def infer_all_sep(path_test_component=None):
         # get the test slices of a component
         slices_path = os.path.join(INPUT_PATH, folder)
         files = listdir(slices_path)
+        print(folder)
+        print(len(files))
         t = []
         num_t = 0
         for file in files:
@@ -273,7 +279,7 @@ def infer_all_sep(path_test_component=None):
                 src_xml = os.path.join(INPUT_PATH, folder, namestr+'.xml')
                 
                 frames = list2array(parse_frame_dump(src_xml))
-                torch = frames[0][3].astype(float)
+                tor = frames[0][3].astype(float)
                 normals_1 = frames[0][7:10].astype(float)
                 normals_2 = frames[0][10:13].astype(float)
 
@@ -294,12 +300,16 @@ def infer_all_sep(path_test_component=None):
                 center = 0.5 * (np.max(xyz,axis=0) + np.min(xyz,axis=0))
                 xyz -= center
                 xyz *= 0.0025
-                xyz_in_expand = np.tile(xyz,(int(FLAGS.batch_size),1,1))
+                xyz_in_expand = np.tile(xyz,(int(batch_size),1,1))
                 l = np.ones(xyz.shape[0])
-                l_expand = np.tile(l,(int(FLAGS.batch_size),1))
+                l_expand = np.tile(l,(int(batch_size),1))
 
-                res = model.run_cls(xyz_in_expand, l_expand, False) #TODO: MODEL und SO
-                fd1 = get_feature_dict_sep((xyz/0.0025)+center, res[0], normals_r, torch)
+                print("XYZ_ex:", xyz_in_expand)
+                #res = model.run_cls(xyz_in_expand, l_expand, False) #TODO: MODEL und SO
+                with torch.no_grad():
+                    res = model(torch.tensor(xyz_in_expand))
+                print("RES: " ,res)
+                fd1 = get_feature_dict_sep((xyz/0.0025)+center, res[0], normals_r, tor)
                 if norm_s in norm_fd.keys():
                     fdicts = norm_fd[norm_s]
                 else:
@@ -342,9 +352,8 @@ def infer_all_sep(path_test_component=None):
         print('Average look up time for one test')
         print(np.mean(np.array(t)))
 
-
-if __name__=='__main__':
-    infer_all_sep(TEST_COMP)
+def main(cfg, model):
+    infer_all_sep(model, TEST_COMP)
     path = ROOT+'/data/test/results'
     folders = listdir(path)
     for folder in folders: # This loop might not be needed anymore.
@@ -371,6 +380,7 @@ if __name__=='__main__':
         print(os.path.join(INPUT_PATH, '../models', folder, folder+'.xml'))
         print(path)
         print(os.getcwd())
-        os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder, folder+'.xml') + ' --infered_points_folder_path='+path+'/'+folder)
+        #os.system('python ' + 'update_xml.py ' + '--original_xml_path='+os.path.join(INPUT_PATH, '../models', folder, folder+'.xml') + ' --infered_points_folder_path='+path+'/'+folder)
 
-       
+#if __name__=='__main__':
+   #main() 

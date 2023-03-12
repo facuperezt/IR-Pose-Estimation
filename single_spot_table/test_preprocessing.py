@@ -83,7 +83,7 @@ class WeldScene_test:
 
         return xyz_crop, cropped_pc
 
-def slice_test(pc_path, path_xml, path_dist, crop_size, num_points):
+def slice_test(pc_path, path_xml, path_dist, crop_size=400, num_points=2048):
     '''Create test slices with welding info without ground truth pose
     
     '''
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         path_pc = os.path.join(path_test, test_file, test_file+'.xyz')   
         name = test_file
         path_xml = os.path.join(path_test, name, name+'.xml')
-        path_dist = os.path.join('../data/test/welding_zone_test', name)
+        path_dist = os.path.join('./data/test/welding_zone_test', name)
         if not os.path.exists(path_dist):
             os.makedirs(path_dist)
             print ('slicing... ...', test_file)

@@ -7,7 +7,7 @@ dataset:
   train:
     split: train
     num_points: 2048  # in training, use sampled 1024 points for data augmentation. 
-  val:
+  test:
     split: test
     num_points: 2048  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT) 
 
@@ -22,6 +22,7 @@ datatransforms:
   val: [PointsToTensor]
   kwargs:
     shift: [0.2, 0.2, 0.2]
+    gravity_dim: 2
 dataloader:
   num_workers: 6
 

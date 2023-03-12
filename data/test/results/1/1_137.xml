@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<FRAME-DUMP Baugruppe="test" VERSION="1.0">
+  <SNaht Name="AutoDetect_93_60" WkzName="MRW510_CDD_10GH" WkzWkl="45" ZRotLock="0">
+    <Kontur>
+      <Punkt X="-3297.993787009949" Y="-4.0" Z="-68.00000010000097">
+        <Fl_Norm X="-0.0" Y="-1.0" Z="-0.0"/>
+        <Fl_Norm X="-1.0" Y="0.0" Z="0.0"/>
+        <Rot X="-90.0" Y="0.0" Z="-0.0"/>
+        <Ext-Achswerte EA3="90.0"/>
+      </Punkt>
+    </Kontur>
+    <Frames>
+      <Frame>
+        <Pos X="-3297.993787009949" Y="-4.0" Z="-68.00000010000097"/>
+        <XVek X="-0.3892766849787616" Y="0.1136435278681654" Z="-0.914083590874283"/>
+        <YVek X="-0.6877285711695356" Y="-0.6960247972840116" Z="0.206346538528902"/>
+        <ZVek X="nan" Y="nan" Z="nan"/>
+      </Frame>
+    </Frames>
+  </SNaht>
+</FRAME-DUMP>
