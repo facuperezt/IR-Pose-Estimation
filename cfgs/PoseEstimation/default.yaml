@@ -12,7 +12,7 @@ dataset:
     num_points: 2048  # in testing, use uniformly pre-sampled 1024 points for evaluation (following https://github.com/lulutang0608/Point-BERT) 
 
 #feature_keys: pos
-num_classes: 6
+num_classes: 8
 
 datatransforms:
   train: [PointsToTensor,
@@ -54,6 +54,8 @@ lr: 0.001 # LR linear rule.
 
 grad_norm_clip: 10
 use_voting: False
+
+#use_amp: True
 # ---------------------------------------------------------------------------- #
 # io and misc
 # ---------------------------------------------------------------------------- #

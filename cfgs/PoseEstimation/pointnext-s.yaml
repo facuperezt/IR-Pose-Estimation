@@ -27,7 +27,7 @@ model:
     NAME: PointNextDecoder
   cls_args:
     NAME: SegHead
-    num_classes: 6
+    num_classes: 8
     in_channels: null
     norm_args:
       norm: 'bn'

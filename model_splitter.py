@@ -10,6 +10,7 @@ def parse_args():
     parser = ArgumentParser()
     parser.add_argument('dataset', type=str, help='Which dataset to load.')
     parser.add_argument('-t', '--test_models', nargs='*', type=str, help='Name of models to be used in testing')
+    parser.add_argument('--keep_data', default="False", help='True if old data should not be removed')
 
     return parser.parse_args()
 
@@ -52,7 +53,7 @@ def split_models(in_path: str, out_path: str, test_path:str = None, test_model_n
 
 if __name__ == '__main__':
     args = parse_args()
-    if os.path.exists('./data'):
+    if os.path.exists('./data') and args.keep_data == False:
         os.system('mv data data_last')
     if args.dataset in ['1', '2']:
         split_models(f'Datasets/welding_objects_ds'+args.dataset, 'data/train/models', 'data/test/models', args.test_models)

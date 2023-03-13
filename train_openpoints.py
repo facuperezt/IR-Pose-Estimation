@@ -278,7 +278,7 @@ def train_one_epoch(model, train_loader, criterion, optimizer, scheduler, scaler
             logits = model(data)
             loss = criterion(logits, target) if 'mask' not in cfg.criterion_args.NAME.lower() \
                 else criterion(logits, target, data['mask'])
-
+        
         if cfg.use_amp:
             scaler.scale(loss).backward()
         else:

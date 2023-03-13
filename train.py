@@ -65,7 +65,7 @@ class TrainPointNet2():
         '''
         args = " --cfg cfgs/PoseEstimation/pointnext-s.yaml"
         path_to_train = './train_openpoints.py'
-        os.system('CUDA_VISIBLE_DEVICES=0 python '+path_to_train+args)
+        os.system('CUDA_VISIBLE_DEVICES=1 python '+path_to_train+args)
 
 
 if __name__ == '__main__':
