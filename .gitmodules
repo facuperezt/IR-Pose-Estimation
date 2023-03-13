@@ -1,3 +1,6 @@
 [submodule "openpoints"]
 	path = openpoints
 	url = git@github.com:ydress/openpoints.git
+[submodule "typings"]
+	path = typings
+	url = https://github.com/againxx/open3d-stubs.git
