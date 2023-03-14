@@ -449,3 +449,5 @@ ENV/
 # mkdocs documentation
 /site
 
+data/test/results
+data/test/welding_zone_test
