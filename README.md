@@ -86,7 +86,7 @@ In Python3 environment
 python single_spot_table/obj_geo_based_classification.py 
 ```
 
-And follow the instructions given by the program to label the dataset using its geometrical properties
+And follow the instructions given by the program to label the dataset using its geometrical properties [^2]
 
 ### Training Step 1. Making lookup Table
 In Python3 environment
