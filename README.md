@@ -16,6 +16,7 @@ conda deactivate py27
 ```
 
 ## Two liner usage
+### PN++
 On Python3 environment
 ```python
 python prepare.py
@@ -30,6 +31,9 @@ python run.py
 
 If this runs you're probably all set.
 
+### PointNeXt
+
+#TODO
 
 ## Usage
 Before starting, please place the files in the following directory format or use the dataset loader:
@@ -82,7 +86,7 @@ In Python3 environment
 python single_spot_table/obj_geo_based_classification.py 
 ```
 
-And follow the instructions given by the program to label the dataset using its geometrical properties
+And follow the instructions given by the program to label the dataset using its geometrical properties [^2]
 
 ### Training Step 1. Making lookup Table
 In Python3 environment
@@ -114,17 +118,29 @@ python test.py -p [-ARGUMENTS]
 - --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
 
 
-### Training Step 3. Train PN++
+### Training Step 3.
+
+#### Train PN++
 In Python2 environment
 ```bash
 python train.py -t [-ARGUMENTS]
 ```
-#### Arguments
+##### Arguments
 - --gpu: Which GPU to use [0 or 1 for dual GPU setups] (Default: 0)
 - --num_points: Number of points contained in the point cloud slice (Default: 2048) [^2]
 - --max_epoch: Maximum amount of Epochs for training (Default: 100)
 - --batch_size: Batch Size for training (Default: 16) [^2]
 - --learning_rate: Initial Learning Rate (Default: 0.001)
+
+#### Train PointNeXt
+In Openpoints environment
+```bash
+CUDA_VISIBLE_DEVICES=0 python ./train_openpoints.py --cfg cfgs/PoseEstimation/pointnext-s.yaml --mode train
+```
+
+For training a different model just change the Argument for `--cfg`.
+
+*WARNING: Depending on the number of classes you have in you data, you need change the parameter NUM_CLASSES in the cfg-files.*
 
 ### Testing Step 1. Data Pre-processing
 In Python3 environment
@@ -142,13 +158,23 @@ python test.py -p [-ARGUMENTS]
 The models need to be in './data/test/models/'
 
 ### Testing Step 2. Inference
+
+#### PN++
 In Python2 environment
 ```bash
 python test.py -i [-ARGUMENTS]
 ```
-#### Arguments
+##### Arguments
 - --model_path: Path of model to run inference with (Default: ''./data/seg_model/model1.ckpt')
 - --batch_size: Batch Size for training (Default: 16) [^2]
+
+#### PointNeXt
+In Openpoints environment
+```bash
+CUDA_VISIBLE_DEVICES=0 python ./train_openpoints.py --cfg cfgs/PoseEstimation/pointnext-s.yaml --mode inference --pretrained_path /path/to/your/pretrained_model
+```
+
+For test a different model just change the Argument for `--cfg`.
 
 #### Outputs
 Stores the results in './data/test/results/'
