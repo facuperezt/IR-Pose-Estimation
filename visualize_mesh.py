@@ -49,3 +49,4 @@ def visualize_mesh():
     # objs = f.readlines()
     # f.close()
     # print(objs)
+    
