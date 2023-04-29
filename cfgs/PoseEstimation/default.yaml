@@ -4,6 +4,7 @@ dataset:
   common:
     NAME: PoseEstimation
     data_dir: './data/train/dataset'
+    num_classes: 8
   train:
     split: train
     num_points: 2048  # in training, use sampled 1024 points for data augmentation. 
@@ -24,7 +25,7 @@ datatransforms:
     shift: [0.2, 0.2, 0.2]
     gravity_dim: 2
 dataloader:
-  num_workers: 6
+  num_workers: 8
 
 batch_size: 16
 
