@@ -101,7 +101,7 @@ def parse_frame_dump(xml_file, safe_parsing= True):
             continue
         total_info.append({'torch': torch, 'weld_frames': weld_frames, 'pose_frames': pose_frames, 'pose_frames_starting_lines': starting_lines, 'snaht_number' : snaht_number, 'snaht_id' : snaht_id})
 
-    print('bad_data_counter = ', bad_data_counter)
+    if bad_data_counter: print('bad_data_counter = ', bad_data_counter)
     if safe_parsing:
         return total_info
     else:

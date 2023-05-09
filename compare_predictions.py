@@ -88,6 +88,18 @@ def angles_from_rot_matrix(R):
 
     return rxyz_deg
 
+def compare_frames_array(frames_one, frames_two):
+    mean_error = {}
+    total_error = {}
+    counter = {}
+    for i in range(len(frames_one)):
+        key = tuple(frames_one[i][10:13])
+        for a,b in zip(frames_one[i][14:23].reshape(3,3).astype(float), frames_two[i][14:23].reshape(3,3).astype(float)):
+            mean_error[key] = mean_error.get(key, np.zeros(3)) + np.array(angles_from_rot_matrix(rotation_matrix_between_vectors(b,a)))/len(frames_one)
+            total_error[key] = total_error.get(key, np.zeros(3)) + np.abs(np.array(angles_from_rot_matrix(rotation_matrix_between_vectors(b,a))))
+            counter[key] = counter.get(key, 0) + 1
+    return mean_error, total_error, counter
+
 
 def main(results_folder_path, model_name, verbose= False):
     FILE_ONE = f'{results_folder_path}/{model_name}/{model_name}.xml' # CHANGE HERE TO THE RIGHT FOLDER
@@ -96,19 +108,16 @@ def main(results_folder_path, model_name, verbose= False):
     frames_one = list2array(parse_frame_dump(FILE_ONE, True))[:,3:]
     frames_two = list2array(parse_frame_dump(FILE_TWO, True))[:,3:]
 
-    d = {}
-    counter = {}
-    for i in range(len(frames_one)):
-        key = tuple(frames_one[i][10:13])
-        for a,b in zip(frames_one[i][14:23].reshape(3,3).astype(float), frames_two[i][14:23].reshape(3,3).astype(float)):
-            d[key] = d.get(key, np.zeros(3)) + np.array(angles_from_rot_matrix(rotation_matrix_between_vectors(b,a)))/len(frames_one)
-            counter[key] = counter.get(key, 0) + 1
+    d, tot, counter = compare_frames_array(frames_one, frames_two)
+
     if verbose:
         print(f"For Model: {model_name}:")
         for key,val in d.items():
             print(f"\tFor Rotation: {key}:")
-            print(f"\t\tMean error angle: {[f'{axis}: {val:.2f}' for axis, val in zip(['x','y','z'], val)]} (#{counter[key]})\n")
-    return d, counter
+            print(f"\t\tMean error angle: {[f'axis: {axis} | mean: {val:.2f} | abs: {total:.2f}' for axis, val, total in zip(['x','y','z'], val, tot[key])]} (#{counter[key]})\n")
+
+    return d, tot, counter
+    
 # %%
 if __name__ == '__main__':
     models = listdir(sys.argv[1]) # bad practice for dayz 
