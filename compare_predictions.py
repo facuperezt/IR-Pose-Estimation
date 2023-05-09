@@ -1,15 +1,8 @@
 #%%
-import open3d as o3d
-from xml_parser import parse_frame_dump, list2array
+from utils.xml_parser import parse_frame_dump, list2array
 import numpy as np
-
-import pickle
-with open('6_cls/matched_dict_6_classes.pkl', 'rb') as f:
-    cls_6 = pickle.load(f)
-with open('8_cls/matched_dict_8_classes.pkl', 'rb') as f:
-    cls_8 = pickle.load(f)
-with open('pn++/matched_dict_8_class_PNpp.pkl', 'rb') as f:
-    cls_pn = pickle.load(f)
+import sys
+from utils.compatibility import listdir
 
 def extract_frame_vectors(frame):
     tf = np.zeros((3,3))
@@ -26,6 +19,8 @@ def compare_frame_vectors(frame_one, frame_two):
     return np.linalg.norm(vec_one - vec_two)
 
 def rotation_matrix_between_vectors(a,b):
+    if (a == b).all() or (a == -b).all():
+        return np.eye(3)
     v = np.cross(a,b)
     s = np.linalg.norm(v)
     c = np.dot(a,b)
@@ -94,22 +89,29 @@ def angles_from_rot_matrix(R):
     return rxyz_deg
 
 
-def main(model):
-    FILE_ONE = f'data_big_results/{model}/{model}.xml' # CHANGE HERE TO THE RIGHT FOLDER
-    FILE_TWO = f'data_big_results/{model}/{model}_predicted.xml'
+def main(results_folder_path, model_name, verbose= False):
+    FILE_ONE = f'{results_folder_path}/{model_name}/{model_name}.xml' # CHANGE HERE TO THE RIGHT FOLDER
+    FILE_TWO = f'{results_folder_path}/{model_name}/{model_name}_predicted.xml'
 
     frames_one = list2array(parse_frame_dump(FILE_ONE, True))[:,3:]
     frames_two = list2array(parse_frame_dump(FILE_TWO, True))[:,3:]
 
     d = {}
+    counter = {}
     for i in range(len(frames_one)):
         key = tuple(frames_one[i][10:13])
         for a,b in zip(frames_one[i][14:23].reshape(3,3).astype(float), frames_two[i][14:23].reshape(3,3).astype(float)):
             d[key] = d.get(key, np.zeros(3)) + np.array(angles_from_rot_matrix(rotation_matrix_between_vectors(b,a)))/len(frames_one)
-    for key,val in d.items():
-        print(f"For Rotation: {key}:")
-        print(f"\t Mean error angle: {[f'{axis}: {val:.2f}' for axis, val in zip(['x','y','z'], val)]}\n")
+            counter[key] = counter.get(key, 0) + 1
+    if verbose:
+        print(f"For Model: {model_name}:")
+        for key,val in d.items():
+            print(f"\tFor Rotation: {key}:")
+            print(f"\t\tMean error angle: {[f'{axis}: {val:.2f}' for axis, val in zip(['x','y','z'], val)]} (#{counter[key]})\n")
+    return d, counter
 # %%
-import sys
 if __name__ == '__main__':
-    main(sys.argv[1])
+    models = listdir(sys.argv[1]) # bad practice for dayz 
+    for model in models:
+        main(sys.argv[1], model, verbose= True)
+# %%

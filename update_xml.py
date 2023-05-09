@@ -133,28 +133,32 @@ def make_document(frames, parts_path, model_name):
     f.write(doc.toprettyxml(indent = '    ', encoding= "UTF-8")) #  removed standalone for compatibility with older python version
     f.close()
 
+# def parse_args():
+#     parser = ArgumentParser()
+#     parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/Reisch', required= False, help='Path to the original models (i.e. ./data/test/models/)')
+#     parser.add_argument('--infered_points_folder_path', type=str, default='./data_last/test/results/', required= False, help='Path to results (i.e. ./data/test/results/)')
+
+#     args = parser.parse_args()
+
+#     assert os.path.isfile(os.path.join(args.original_xml_path)), 'Original .xml file not found.'
+#     assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
+
+#     ret = {
+#         'file_path' : os.path.join(args.original_xml_path),
+#         'parts_path' : os.path.join(args.infered_points_folder_path),
+#     }
+
+#     return ret
+
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--original_xml_path', type=str, default='./data_last/test/models/Reisch', required= False, help='Path to the original models (i.e. ./data/test/models/)')
-    parser.add_argument('--infered_points_folder_path', type=str, default='./data_last/test/results/', required= False, help='Path to results (i.e. ./data/test/results/)')
+    parser.add_argument('--results_folder_path', type=str, required=True)
 
-    args = parser.parse_args()
-
-    assert os.path.isfile(os.path.join(args.original_xml_path)), 'Original .xml file not found.'
-    assert os.path.isdir(os.path.join(args.infered_points_folder_path)), 'Infered files folder not found.'
-
-    ret = {
-        'file_path' : os.path.join(args.original_xml_path),
-        'parts_path' : os.path.join(args.infered_points_folder_path),
-    }
-
-    return ret
+    return parser.parse_args()
 
 def sort_xmls(parts_path, model_name):
-    print(parts_path, model_name)
-    all_parts = [a for a in listdir(parts_path) if len(os.path.splitext(a)[0].split('_')) > 1 and os.path.splitext(a)[-1] == '.xml' and not os.path.splitext(a)[0].split('_')[-1] == 'predicted' and model_name in a]
+    all_parts = [a for a in listdir(parts_path) if len(os.path.splitext(a)[0].split('_')) > 1 and os.path.splitext(a)[-1] == '.xml' and not os.path.splitext(a)[0].split('_')[-1] == 'predicted' and model_name in a and model_name+'.xml' != a]
     tmp = sorted(all_parts, key=lambda x: int(os.path.splitext(x)[0].split('_')[-1]))
-    print(tmp)
     return iter([os.path.join(parts_path, file) for file in tmp])
 
 
@@ -186,7 +190,10 @@ def main(original_xml_path, parts_path):
 
 if __name__ == '__main__':
     args = parse_args()
-    original_xml_path = args['file_path']
-    parts_path = args['parts_path']
-
-    main(original_xml_path, parts_path)
+    # original_xml_path = args['file_path']
+    # parts_path = args['parts_path']
+    path = args.results_folder_path
+    models = listdir(path)
+    for model in models:
+        model_path = os.path.join(path, model)
+        main(model_path + f"/{model}.xml", model_path)
