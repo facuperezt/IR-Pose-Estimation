@@ -113,12 +113,12 @@ def visualizer_3(fig_path, pcd, torch, pose):
 
 def show_error():
     # load lookup table
-    with open('../data/train/lookup_table/lookup_table.pkl', 'rb') as f:
+    with open('./data/train/lookup_table/lookup_table.pkl', 'rb') as f:
         dict_all = pickle.load(f)
 
-    path_torch_1 = '../data/torch/MRW510_10GH.obj'
-    path_torch_2 = '../data/torch/TAND_GERAD_DD.obj'
-    path_result = '../data/test/results'
+    path_torch_1 = './data/torch/MRW510_10GH.obj'
+    path_torch_2 = './data/torch/TAND_GERAD_DD.obj'
+    path_result = './data_big_results'
     folders = os.listdir(path_result)
 
     for folder in folders:
@@ -126,7 +126,7 @@ def show_error():
         with open(os.path.join(path_result, folder,'matched_dict.pkl'), 'rb') as f:
             matched_dict = pickle.load(f)
 
-        path_model = '../data/test/models/'+folder+'/'+folder+'.obj'
+        path_model = './data/test/models/'+folder+'/'+folder+'.obj'
         mesh_model = o3d.io.read_triangle_mesh(path_model)
         mesh_model.compute_vertex_normals()
         elements = []
@@ -138,7 +138,7 @@ def show_error():
         # predicted xml file 
         res = path_result+'/'+folder+'/'+folder+'.xml'
         # ground truth of xml file
-        templ = '../data/test/models/'+folder+'/'+folder+'.xml'
+        templ = './data/test/models/'+folder+'/'+folder+'.xml'
         # predicted result
         r = list2array(parse_frame_dump(res))[:,3:].astype(float)
         # ground truth
@@ -169,8 +169,8 @@ def show_error():
                         print ('No. '+str(ii)+': totally correct')
                         slice_name = get_slice_name(path_result+'/'+folder, r[ii, 0:10])
                         matched_temp = matched_dict[slice_name]
-                        path_slice_xyz = '../data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
-                        path_slice_matched = '../data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
+                        path_slice_xyz = './data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
+                        path_slice_matched = './data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
                         pose_matched = dict_all[matched_temp]
 
                         slice_pc = o3d.io.read_point_cloud(path_slice_xyz)
@@ -204,8 +204,8 @@ def show_error():
                             print ('No. '+str(ii)+': correct')
                             slice_name = get_slice_name(path_result+'/'+folder, r[ii, 0:10])
                             matched_temp = matched_dict[slice_name]
-                            path_slice_xyz = '../data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
-                            path_slice_matched = '../data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
+                            path_slice_xyz = './data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
+                            path_slice_matched = './data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
                             pose_matched = dict_all[matched_temp]
                             slice_pc = o3d.io.read_point_cloud(path_slice_xyz)
                             matched_pc = o3d.io.read_point_cloud(path_slice_matched)
@@ -242,8 +242,8 @@ def show_error():
                                 print ('No. '+str(ii)+': collided')
                                 slice_name = get_slice_name(path_result+'/'+folder, r[ii, 0:10])
                                 matched_temp = matched_dict[slice_name]
-                                path_slice_xyz = '../data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
-                                path_slice_matched = '../data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
+                                path_slice_xyz = './data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
+                                path_slice_matched = './data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
                                 pose_matched = dict_all[matched_temp]
                                 slice_pc = o3d.io.read_point_cloud(path_slice_xyz)
                                 matched_pc = o3d.io.read_point_cloud(path_slice_matched)
@@ -269,8 +269,8 @@ def show_error():
                                 print ('No. '+str(ii)+': safe')
                                 slice_name = get_slice_name(path_result+'/'+folder, r[ii, 0:10])
                                 matched_temp = matched_dict[slice_name]
-                                path_slice_xyz = '../data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
-                                path_slice_matched = '../data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
+                                path_slice_xyz = './data/test/welding_zone_test/'+folder+'/'+slice_name+'.xyz'
+                                path_slice_matched = './data/train/welding_zone_comp/'+matched_dict[slice_name]+'.pcd'
                                 pose_matched = dict_all[matched_temp]
                                 slice_pc = o3d.io.read_point_cloud(path_slice_xyz)
                                 matched_pc = o3d.io.read_point_cloud(path_slice_matched)
