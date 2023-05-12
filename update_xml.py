@@ -36,8 +36,8 @@ def make_document(frames, parts_path, model_name):
             # SNaht.setAttribute('ID', frame[-1])
             SNaht.setAttribute('ID', str(frame[-1]) if frame[-1] is not None else None)
             SNaht.setAttribute('ZRotLock',str(frame[1]))
-            SNaht.setAttribute('WkzWkl',str(frame[3]))
-            SNaht.setAttribute('WkzName',str(frame[2]))
+            SNaht.setAttribute('WkzWkl',str(frame[2]))
+            SNaht.setAttribute('WkzName',str(frame[3]))
             FRAME_DUMP.appendChild(SNaht)
 
             Kontur = doc.createElement('Kontur')
@@ -72,7 +72,7 @@ def make_document(frames, parts_path, model_name):
         Rot.setAttribute('Z', str(frame[15]))
         Punkt.appendChild(Rot)
         EA = doc.createElement('Ext-Achswerte')
-        EA.setAttribute('EA4', str(frame[16]))
+        EA.setAttribute('EA3', str(frame[16]))
         Punkt.appendChild(EA)
         if len(frame) > 20: # So we also include the flawed data, as in the original
             Frame = doc.createElement('Frame')
@@ -83,42 +83,29 @@ def make_document(frames, parts_path, model_name):
             Pos.setAttribute('Y', str(frame[5]))
             Pos.setAttribute('Z', str(frame[6]))
             Frame.appendChild(Pos)
-            
-            rot_matrix = linalg.expm(np.cross(np.eye(3), [1,0,0] / linalg.norm([1,0,0]) * (-rot[0])))
 
             xv = frame[17:20].astype(float)
 
-            xv_r = np.matmul(rot_matrix, xv.T)
             XVek = doc.createElement('XVek')
-            XVek.setAttribute('X', str(xv_r[0]))
-            XVek.setAttribute('Y', str(xv_r[1]))
-            XVek.setAttribute('Z', str(xv_r[2]))
+            XVek.setAttribute('X', str(xv[0]))
+            XVek.setAttribute('Y', str(xv[1]))
+            XVek.setAttribute('Z', str(xv[2]))
             Frame.appendChild(XVek)
-            try:
-                yv = frame[20:23].astype(float)
-            except ValueError as e:
-                print(frame)
-                print(frame[17:20])
-                print(frame[20:23])
-                print(frame[20])
-                print(frame[21])
-                print(frame[22])
-                print(frame[23])
-                print(frame[24])
-                print(e)
-                raise ValueError
-            yv_r = np.matmul(rot_matrix, yv.T)
+
+            yv = frame[20:23].astype(float)
+
             YVek = doc.createElement('YVek')
-            YVek.setAttribute('X', str(yv_r[0]))
-            YVek.setAttribute('Y', str(yv_r[1]))
-            YVek.setAttribute('Z', str(yv_r[2]))
+            YVek.setAttribute('X', str(yv[0]))
+            YVek.setAttribute('Y', str(yv[1]))
+            YVek.setAttribute('Z', str(yv[2]))
             Frame.appendChild(YVek)
+            
             zv = frame[23:26].astype(float)
-            zv_r = np.matmul(rot_matrix, zv.T)
+
             ZVek = doc.createElement('ZVek')
-            ZVek.setAttribute('X', str(zv_r[0]))
-            ZVek.setAttribute('Y', str(zv_r[1]))
-            ZVek.setAttribute('Z', str(zv_r[2]))
+            ZVek.setAttribute('X', str(zv[0]))
+            ZVek.setAttribute('Y', str(zv[1]))
+            ZVek.setAttribute('Z', str(zv[2]))
             Frame.appendChild(ZVek)
             Rot = doc.createElement('Rot')
             Rot.setAttribute('X', str(frame[13]))
@@ -153,6 +140,7 @@ def make_document(frames, parts_path, model_name):
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('--results_folder_path', type=str, required=True)
+    parser.add_argument('--xml_path', type=str, required=False, default=None)
 
     return parser.parse_args()
 
@@ -193,7 +181,13 @@ if __name__ == '__main__':
     # original_xml_path = args['file_path']
     # parts_path = args['parts_path']
     path = args.results_folder_path
-    models = listdir(path)
-    for model in models:
+    xml_path = args.xml_path
+    if xml_path is None:
+        models = listdir(path)
+        for model in models:
+            model_path = os.path.join(path, model)
+            main(model_path + f"/{model}.xml", model_path)
+    else:
+        model = os.path.splitext(xml_path)[0].split('/')[-1]
         model_path = os.path.join(path, model)
-        main(model_path + f"/{model}.xml", model_path)
+        main(xml_path, model_path)

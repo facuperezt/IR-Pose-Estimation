@@ -33,7 +33,7 @@ def parse_frame_dump(xml_file, safe_parsing= True):
 
     for i,SNaht in enumerate(root.findall('SNaht')):
         
-        torch = [SNaht.get('Name'), SNaht.get('ZRotLock'), SNaht.get('WkzName'), SNaht.get('WkzWkl')]
+        torch = [SNaht.get('Name'), SNaht.get('ZRotLock'), SNaht.get('WkzWkl'), SNaht.get('WkzName')]
         weld_frames = [] # list of all weld_frames as np.arrays(X,Y,Z) in mm
         pose_frames = [] # list of all pose_frames as 4x4 homogenous transforms
         starting_lines = [] # list of all starting line (The line of the Point <Pos> in each Pose Frame <Frame>)
@@ -93,7 +93,7 @@ def parse_frame_dump(xml_file, safe_parsing= True):
                 pose_frames.append(torch_frame)
                 starting_lines.append(start_line)
                 snaht_number.append(i)
-                snaht_id.append(SNaht.get('ID'))
+                snaht_id.append(SNaht.get('ID', None))
 
         if safe_parsing and len(weld_frames) != len(pose_frames) and len(pose_frames) != 0: # For inference, there are not pose_frames, and in other cases a different amount of entries signals bad data
             bad_data_counter +=1
@@ -117,10 +117,10 @@ def list2array(total_info, safe_parsing= True):
     for info in total_info:
         for i, spot in enumerate(info['weld_frames']):
             weld_info = []
-            weld_info.append(info['torch'][0])
-            weld_info.append(info['torch'][1])
-            weld_info.append(info['torch'][2])
-            weld_info.append(info['torch'][3])
+            weld_info.append(str(info['torch'][0])) # Name
+            weld_info.append(float(info['torch'][1])) # ZRotLock
+            weld_info.append(float(info['torch'][2])) # WkzWkl
+            weld_info.append(str(info['torch'][3])) # WkzName
             # torch = info['torch'][3]
             # if torch == 'MRW510_10GH' or torch == 'MRW510_CDD_10GH' or torch == 'TL2000_EFF20_17SO':
             #     weld_info.append(0)
@@ -128,40 +128,40 @@ def list2array(total_info, safe_parsing= True):
             #     weld_info.append(1)
             # else:
             #     weld_info.append(2)
-            weld_info.append(spot['position'][0])
-            weld_info.append(spot['position'][1])
-            weld_info.append(spot['position'][2])
-            weld_info.append(spot['norm'][0][0])
-            weld_info.append(spot['norm'][0][1])
-            weld_info.append(spot['norm'][0][2])
-            weld_info.append(spot['norm'][1][0])
-            weld_info.append(spot['norm'][1][1])
-            weld_info.append(spot['norm'][1][2])
+            weld_info.append(float(spot['position'][0]))
+            weld_info.append(float(spot['position'][1]))
+            weld_info.append(float(spot['position'][2]))
+            weld_info.append(float(spot['norm'][0][0]))
+            weld_info.append(float(spot['norm'][0][1]))
+            weld_info.append(float(spot['norm'][0][2]))
+            weld_info.append(float(spot['norm'][1][0]))
+            weld_info.append(float(spot['norm'][1][1]))
+            weld_info.append(float(spot['norm'][1][2]))
 
-            weld_info.append(spot['rot'][0])
-            weld_info.append(spot['rot'][1])
-            weld_info.append(spot['rot'][2])
+            weld_info.append(float(spot['rot'][0]))
+            weld_info.append(float(spot['rot'][1]))
+            weld_info.append(float(spot['rot'][2]))
 
 
-            weld_info.append(spot['EA'])
+            weld_info.append(float(spot['EA']))
 
             if len(info['pose_frames']) > 0 and safe_parsing or \
                len(info['pose_frames']) > 0 and i < len(info['pose_frames']) and not safe_parsing:
-                weld_info.append(info['pose_frames'][i][0][0])
-                weld_info.append(info['pose_frames'][i][1][0])
-                weld_info.append(info['pose_frames'][i][2][0])
-                weld_info.append(info['pose_frames'][i][0][1])
-                weld_info.append(info['pose_frames'][i][1][1])
-                weld_info.append(info['pose_frames'][i][2][1])
-                weld_info.append(info['pose_frames'][i][0][2])
-                weld_info.append(info['pose_frames'][i][1][2])
-                weld_info.append(info['pose_frames'][i][2][2])
+                weld_info.append(float(info['pose_frames'][i][0][0]))
+                weld_info.append(float(info['pose_frames'][i][1][0]))
+                weld_info.append(float(info['pose_frames'][i][2][0]))
+                weld_info.append(float(info['pose_frames'][i][0][1]))
+                weld_info.append(float(info['pose_frames'][i][1][1]))
+                weld_info.append(float(info['pose_frames'][i][2][1]))
+                weld_info.append(float(info['pose_frames'][i][0][2]))
+                weld_info.append(float(info['pose_frames'][i][1][2]))
+                weld_info.append(float(info['pose_frames'][i][2][2]))
                 weld_info.append(info['pose_frames_starting_lines'][i])
                 weld_info.append(info['snaht_number'][i])
-                weld_info.append(info['snaht_id'][i])
+                weld_info.append(info['snaht_id'][i] if info['snaht_id'][i] != "" else None)
 
-            res.append(np.asarray(weld_info))
-    return np.asarray(res)
+            res.append(np.array(weld_info))#, dtype="|U20, f8, f8, U20, "+", ".join(["f8"]*(len(weld_info) - 5))+",U20"))
+    return np.array(res)#, dtype="|U20, f8, f8, U20, "+", ".join(["f8"]*(len(weld_info) - 5))+",U20")
 
 
 
